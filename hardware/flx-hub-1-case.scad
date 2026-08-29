@@ -43,9 +43,21 @@ out_d = 8.2;                               // output cable grommet holes
 out_pitch = 18;
 out_z = 12;
 
-/* ---------- PCB / devkit mounting ---------- */
-pcb_w = 100; pcb_d = 70;                   // carrier board target size
+/* ---------- interior fit-out (drop-in assembly) ----------
+   Zones, seen from above with the jack face at the bottom:
+     front strip  — wiring harness lane with zip-tie bridges
+     left-centre  — main board (protoboard now, carrier PCB later)
+     right column — 3-relay module on posts, next to the grommets
+     rear-left    — buck converter tray (drop in, lid holds it)
+     rear-centre  — USB-C power module tray behind the USB cutout
+------------------------------------------------------------- */
+pcb_w = 70;  pcb_d = 50;                   // main board zone
+pcb_x = 15;  pcb_y = 25;                   // its lower-left corner
 standoff_h = 5;  standoff_d = 7;  screw_d = 2.6;   // M2.5 self-tap
+relay_x = 96; relay_y = 26;                // relay module zone (26 x 48)
+relay_w = 26; relay_d = 48;
+buck_x = 14;  buck_y = 70;  buck_w = 26; buck_d = 18;   // buck tray
+psu_x  = 51;  psu_y  = 72;  psu_w  = 27; psu_d  = 16;   // USB-C module tray
 
 /* ---------- details ---------- */
 pipe_d   = 2.0;       // status LED light-pipe hole in the lid
@@ -65,6 +77,29 @@ module squircle(w, d, r) {
 module shell2d() {
   difference() { squircle(W, D, R); offset(-T) squircle(W, D, R); }
 }
+// screw post for a module corner
+module post(x, y, h = 4, d = 6, hole = 2.2) {
+  translate([x, y, Tf]) difference() {
+    cylinder(d = d, h = h);
+    cylinder(d = hole, h = h + 1);
+  }
+}
+// drop-in tray: 3-sided fence, open toward the front; the lid's
+// inner lip stops anything jumping out
+module tray(x, y, w, d, wall = 1.6, h = 3.2) {
+  translate([x, y, Tf]) difference() {
+    cube([w, d, h]);
+    translate([wall, -1, -1]) cube([w - 2 * wall, d - wall + 1, h + 2]);
+  }
+}
+// zip-tie bridge for the jack wiring harness
+module tiebar(x, y) {
+  translate([x, y, Tf]) {
+    cube([2, 6, 3.4]);
+    translate([7, 0, 0]) cube([2, 6, 3.4]);
+    translate([0, 0, 2.4]) cube([9, 6, 1]);
+  }
+}
 
 /* ============ BASE ============ */
 module base() {
@@ -74,14 +109,26 @@ module base() {
       linear_extrude(Tf) squircle(W, D, R);
       // walls
       linear_extrude(H) shell2d();
-      // PCB standoffs
-      for (x = [(W-pcb_w)/2 + 5, (W+pcb_w)/2 - 5],
-           y = [(D-pcb_d)/2 + 5, (D+pcb_d)/2 - 5])
+      // main board standoffs (protoboard now, carrier PCB later)
+      for (x = [pcb_x + 5, pcb_x + pcb_w - 5],
+           y = [pcb_y + 5, pcb_y + pcb_d - 5])
         translate([x, y, Tf])
           difference() {
             cylinder(d = standoff_d, h = standoff_h);
             cylinder(d = screw_d,    h = standoff_h + 1);
           }
+      // relay module posts — right column, beside the grommets
+      for (x = [relay_x + 3, relay_x + relay_w - 3],
+           y = [relay_y + 3, relay_y + relay_d - 3])
+        post(x, y);
+      // drop-in trays: buck converter (rear-left) and the USB-C
+      // power module directly behind its cutout
+      tray(buck_x, buck_y, buck_w, buck_d);
+      tray(psu_x,  psu_y,  psu_w,  psu_d);
+      // zip-tie bridges for the 12-jack harness, along the front
+      tiebar(30, 16);
+      tiebar(62, 16);
+      tiebar(94, 16);
       // lid screw posts in the corners
       for (x = [R, W - R], y = [R, D - R])
         translate([x, y, Tf])
@@ -97,9 +144,8 @@ module base() {
       translate([x0 + c * jack_pitch, T + 1, jack_z + r * jack_rowgap])
         rotate([90, 0, 0]) cylinder(d = jack_d, h = T + 2);
 
-    // ---- right side: P10 level jack ----
-    translate([W - T - 1, D/2, jack_z + jack_rowgap/2])
-      rotate([0, 90, 0]) cylinder(d = p10_d, h = T + 2);
+    // (P10 is the top-right hole of the front grid — a 4-pole jack
+    //  in the same Ø6.4 barrel; no side-wall hole needed)
 
     // ---- rear: USB-C ----
     translate([W/2 - usb_w/2, D - T - 1, usb_z - usb_h/2])
@@ -110,9 +156,9 @@ module base() {
       translate([W/2 + 14 + i * out_pitch, D - T - 1, out_z])
         rotate([-90, 0, 0]) cylinder(d = out_d, h = T + 2);
 
-    // ---- floor vents (under the relays / PSU zone) ----
+    // ---- floor vents (under the main board, clear of the trays) ----
     for (i = [0 : vent_n - 1])
-      translate([W/2 - 42 + i * 12, D - 24, -1])
+      translate([20 + i * 12, 40, -1])
         linear_extrude(Tf + 2) squircle(3, 12, 1.4);
 
     // ---- QR label recess, underside ----
