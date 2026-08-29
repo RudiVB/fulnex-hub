@@ -75,6 +75,7 @@ export default function DevicePage() {
       const payload = {
         led: device.led_on,
         led2: d.led2 === true,
+        led3: d.led3 === true,
         ...(typeof d.brightness === "number" ? { brightness: d.brightness } : {}),
         ...(typeof d.interval === "number" ? { interval: d.interval } : {}),
         recipe: d.recipe === true,
@@ -459,6 +460,7 @@ function ControlsCard({ device, onChange, publish, instant }: {
   );
   const [pulsing, setPulsing] = useState(false);
   const led2 = desired.led2 === true;
+  const led3 = desired.led3 === true;
   const recipe = desired.recipe === true;
   const interval = typeof desired.interval === "number" ? (desired.interval as number) : 60;
 
@@ -482,6 +484,15 @@ function ControlsCard({ device, onChange, publish, instant }: {
           <span className="text-xs font-mono uppercase tracking-widest text-mute group-hover:text-ink">Output 2</span>
           <span className={`relative w-11 h-6 rounded-full transition-colors flex items-center px-0.5 ${
             led2 ? "bg-brass justify-end shadow-[0_0_14px_rgba(255,255,255,.35)]" : "bg-line justify-start"
+          }`}>
+            <motion.span layout transition={{ type: "spring", stiffness: 550, damping: 32 }} className="w-5 h-5 rounded-full bg-ink" />
+          </span>
+        </button>
+
+        <button onClick={() => updateDesired({ led3: !led3 })} className="flex items-center gap-3 group">
+          <span className="text-xs font-mono uppercase tracking-widest text-mute group-hover:text-ink">Output 3</span>
+          <span className={`relative w-11 h-6 rounded-full transition-colors flex items-center px-0.5 ${
+            led3 ? "bg-brass justify-end shadow-[0_0_14px_rgba(255,255,255,.35)]" : "bg-line justify-start"
           }`}>
             <motion.span layout transition={{ type: "spring", stiffness: 550, damping: 32 }} className="w-5 h-5 rounded-full bg-ink" />
           </span>

@@ -116,6 +116,7 @@ Deno.serve(async (req) => {
     interval,
     led: device.led_on === true,
     led2: d.led2 === true,
+    led3: d.led3 === true,
   };
   const brightness = num(d.brightness);
   if (brightness !== undefined) reply.brightness = Math.min(100, Math.max(0, brightness));

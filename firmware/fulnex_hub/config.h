@@ -10,7 +10,7 @@
 #define DEVICE_KEY       "olof-first-device-key-8c31"
 #define CLAIM_CODE       "OLOF01"           // shown on the setup portal
 #define MQTT_SECRET      "flx2-9k2m4vq7x"   // instant-command topic secret
-#define FIRMWARE_VERSION "1.2.0"
+#define FIRMWARE_VERSION "1.2.1"
 
 // Platform
 #define INGEST_URL "https://esqtrcxaozymslwpeqgu.supabase.co/functions/v1/ingest"
@@ -72,10 +72,19 @@
 // ------------------------------------------------------------
 //  OUTPUTS — controlled from the site
 // ------------------------------------------------------------
-#define OUT1_PIN        26    // "LED" toggle + brightness slider (PWM)
+#define OUT1_PIN        26    // "LED" toggle + brightness slider
                               // GPIO25's output driver is dead on this
                               // specific board — confirmed by bench test
+#define OUT1_ACTIVE     HIGH  // LOW for active-low relay boards
+#define OUT1_PWM        1     // 1 = dimmable (LEDs); 0 = plain on/off —
+                              // ALWAYS 0 when OUT1 drives a relay!
+
 #define OUT2_PIN        33    // "Output 2" toggle + Pulse button
+#define OUT2_ACTIVE     HIGH
+
+#define OUT3_PIN        -1    // "Output 3" toggle (e.g. second fan relay)
+#define OUT3_ACTIVE     HIGH
+
 #define BUZZER_PIN      -1    // e.g. 13 — site "beep" makes it chirp
 
 // ------------------------------------------------------------
