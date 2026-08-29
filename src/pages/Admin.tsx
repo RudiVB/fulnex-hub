@@ -181,6 +181,7 @@ export default function Admin() {
             <ProvisionCard products={products} onChange={load} />
             <BuildDiagramCard />
           </div>
+          <RunbookCard />
           <InventoryCard parts={parts} products={products} onChange={load} />
           <DownloadsCard fw={fw} />
         </div>
@@ -619,6 +620,52 @@ function BuildDiagramCard() {
   );
 }
 
+// The procedure: parts on the bench -> customer's phone buzzing.
+const RUNBOOK: { t: string; d: string; who: "Olof" | "Rudi" | "Customer" }[] = [
+  { who: "Olof", t: "Stock check", d: "Parts list below must say ≥ 1 buildable. Pull one unit's parts onto the bench." },
+  { who: "Olof", t: "Print the case", d: "base + lid STLs from hardware/, matte black PETG, lid printed logo-face-down on PEI. Press the clear light-pipe stub into the lid." },
+  { who: "Olof", t: "Assemble", d: "Press the 12 sense jacks + P10 into the faceplate (nuts inside). Mount board, relays, PSU on the standoffs. Route output cables through the rear grommets. Leave the lid off." },
+  { who: "Olof", t: "Flash the generic image", d: "USB in, upload fulnex_hub-2.0.0.bin (or compile the sketch with configs/GENERIC.h). Same binary for every unit, forever." },
+  { who: "Rudi", t: "Mint the unit", d: "Provision card above: pick the product, Mint. The serial, key, claim code and QR exist from this moment." },
+  { who: "Olof", t: "Provision over serial", d: "Paste the FULNEX-PROVISION line into the serial monitor at 115200. The board reboots as its serial. FULNEX-INFO to verify." },
+  { who: "Olof", t: "QC — the GPIO25 rule", d: "Hold BOOT while power-cycling → jig mode: every output clicks in turn, every input prints every 2 s. No pin unproven. Reset to exit." },
+  { who: "Olof", t: "Cloud smoke test", d: "Join the FULNEX-<serial> hotspot, connect it to workshop Wi-Fi, watch it turn green in Fleet. Toggle an output from the dashboard and see the echo come back." },
+  { who: "Olof", t: "Wipe Wi-Fi, keep identity", d: "Hold BOOT 5 s (factory reset). The customer gets a fresh setup portal; serial and key stay in NVS." },
+  { who: "Olof", t: "Label, lid, box", d: "Print the label from the mint card, stick it in the base recess, close the lid (4 screws), box it with the quick-start card and included senses." },
+  { who: "Rudi", t: "Sell and ship", d: "Sales tab: pre-order → invite → paid order → built → shipped → delivered. Revenue counts itself." },
+  { who: "Customer", t: "Scan, claim, live", d: "QR on the base → account → claim → product-specific first steps. Their tiles appear, autopilot preset one tap away, phone notifications on." },
+];
+
+function RunbookCard() {
+  return (
+    <FadeUp className="card p-5" delay={0.06}>
+      <div className="flex items-center gap-3 mb-1">
+        <span className="icon-chip"><ClipboardList size={17} strokeWidth={1.75} /></span>
+        <h2 className="font-medium">Production runbook — parts to buzzing phone</h2>
+      </div>
+      <p className="text-mute text-sm mb-4">
+        The whole procedure, in order. If every step passes, the unit cannot ship broken.
+      </p>
+      <ol className="grid md:grid-cols-2 gap-2.5">
+        {RUNBOOK.map((s, i) => (
+          <li key={s.t} className="flex items-start gap-3 border border-line rounded-xl px-4 py-3">
+            <span className="font-mono text-brass text-xs pt-0.5 w-5 shrink-0">{String(i + 1).padStart(2, "0")}</span>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-sm font-medium">{s.t}</span>
+                <span className={`text-[9px] font-mono uppercase tracking-wider border rounded-full px-1.5 py-px ${
+                  s.who === "Olof" ? "text-ink border-line" : s.who === "Rudi" ? "text-brass border-brassdim" : "text-ok border-ok/40"
+                }`}>{s.who}</span>
+              </div>
+              <p className="text-mute text-xs mt-0.5 leading-relaxed">{s.d}</p>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </FadeUp>
+  );
+}
+
 function InventoryCard({ parts, products, onChange }: {
   parts: Part[]; products: Product[]; onChange: () => void;
 }) {
@@ -766,6 +813,16 @@ function DownloadsCard({ fw }: { fw: { name: string; url: string }[] }) {
           </a>
           <span className="text-faint text-xs">— Rev A enclosure, OpenSCAD, parametric</span>
         </li>
+        {["flx-hub-1-base.stl", "flx-hub-1-lid.stl"].map((f) => (
+          <li key={f} className="flex items-center gap-2.5">
+            <Hammer size={14} className="text-faint" />
+            <a className="text-brass hover:underline"
+               href={`https://github.com/RudiVB/fulnex-hub/raw/main/hardware/stl/${f}`}>
+              {f}
+            </a>
+            <span className="text-faint text-xs">— print-ready, matte PETG{f.includes("lid") ? ", print face-down" : ""}</span>
+          </li>
+        ))}
         {fw.map((f) => (
           <li key={f.name} className="flex items-center gap-2.5">
             <Cpu size={14} className="text-faint" />

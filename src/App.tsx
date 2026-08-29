@@ -20,6 +20,7 @@ import Admin from "./pages/Admin";
 import Preorder from "./pages/Preorder";
 import Plans from "./pages/Plans";
 import Orders from "./pages/Orders";
+import Manual from "./pages/Manual";
 
 function Brand({ compact = false }: { compact?: boolean }) {
   return (
@@ -44,12 +45,13 @@ function Brand({ compact = false }: { compact?: boolean }) {
 function PublicShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="border-b border-line sticky top-0 z-20 bg-ground/85 backdrop-blur">
+      <header className="border-b border-line sticky top-0 z-20 bg-ground/85 backdrop-blur print:hidden">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 h-14 flex items-center justify-between">
           <Brand />
           <nav className="flex items-center gap-3 sm:gap-6 text-sm">
             <Link to="/plans" className="text-mute hover:text-ink transition-colors hidden sm:block">Plans</Link>
-            <Link to="/setup" className="text-mute hover:text-ink transition-colors hidden sm:block">Setup</Link>
+            <Link to="/manual" className="text-mute hover:text-ink transition-colors hidden sm:block">Manuals</Link>
+            <Link to="/setup" className="text-mute hover:text-ink transition-colors hidden md:block">Setup</Link>
             <Link to="/preorder" className="btn-brass font-medium rounded-lg px-4 py-1.5">
               Pre-order
             </Link>
@@ -63,10 +65,14 @@ function PublicShell({ children }: { children: React.ReactNode }) {
         </div>
       </header>
       <main className="flex-1 w-full">{children}</main>
-      <footer className="border-t border-line">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 py-5 flex items-center justify-between text-xs font-mono text-faint tracking-wide">
+      <footer className="border-t border-line print:hidden">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 py-5 flex flex-wrap items-center justify-between gap-3 text-xs font-mono text-faint tracking-wide">
           <span>FULNEX · your things, watched</span>
-          <span>pre-order phase</span>
+          <span className="flex items-center gap-4">
+            <Link to="/manual" className="hover:text-mute">manuals</Link>
+            <Link to="/plans" className="hover:text-mute">plans</Link>
+            <span>pre-order phase</span>
+          </span>
         </div>
       </footer>
     </div>
@@ -263,6 +269,8 @@ export default function App() {
           <Route path="/preorder" element={<Preorder />} />
           <Route path="/plans" element={<Plans />} />
           <Route path="/setup" element={<Setup />} />
+          <Route path="/manual" element={<Manual />} />
+          <Route path="/manual/:slug" element={<Manual />} />
           <Route path="/device/:id" element={session ? <DevicePage /> : <Navigate to="/login" />} />
           <Route path="/claim" element={<Claim />} />
           <Route path="/claim/:serial" element={<Claim />} />

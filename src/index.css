@@ -110,3 +110,18 @@ body::after {
   outline-offset: 2px;
   border-radius: 4px;
 }
+
+/* ---- print: manuals become leaflets ---- */
+@media print {
+  body { background: #fff !important; color: #111 !important; }
+  body::before, body::after { display: none !important; }
+  .card { background: #fff !important; border-color: #bbb !important; box-shadow: none !important; }
+  .card::after { display: none !important; }
+  .text-ink, .text-brass { color: #000 !important; }
+  .text-mute { color: #333 !important; }
+  .text-faint { color: #555 !important; }
+  [class*="border-line"] { border-color: #bbb !important; }
+  .icon-chip { background: #f2f2f2 !important; border-color: #ccc !important; color: #000 !important; }
+  a { color: #000 !important; }
+}
+@page { margin: 14mm; }

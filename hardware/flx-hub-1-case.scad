@@ -105,9 +105,9 @@ module base() {
     translate([W/2 - usb_w/2, D - T - 1, usb_z - usb_h/2])
       cube([usb_w, T + 2, usb_h]);
 
-    // ---- rear: 3 output grommets (O1..O3) ----
-    for (i = [-1, 0, 1])
-      translate([W/2 + 32 + i * out_pitch - 32, D - T - 1, out_z])
+    // ---- rear: 3 output grommets (O1..O3), clear of the USB ----
+    for (i = [0, 1, 2])
+      translate([W/2 + 14 + i * out_pitch, D - T - 1, out_z])
         rotate([-90, 0, 0]) cylinder(d = out_d, h = T + 2);
 
     // ---- floor vents (under the relays / PSU zone) ----
