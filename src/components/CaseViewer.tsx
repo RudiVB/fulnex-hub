@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 const PARTS = [
   { key: "base", label: "Base", file: "/hardware/flx-hub-1-base.stl" },
   { key: "lid", label: "Lid", file: "/hardware/flx-hub-1-lid.stl" },
+  { key: "deck", label: "ESP deck", file: "/hardware/flx-hub-1-deck.stl" },
 ] as const;
 
 export function CaseViewer() {

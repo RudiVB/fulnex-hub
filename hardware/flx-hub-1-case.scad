@@ -15,7 +15,7 @@
 // ============================================================
 
 /* ---------- what to render ---------- */
-part = "both";        // "base" | "lid" | "both" (preview side by side)
+part = "both";        // "base" | "lid" | "deck" | "both"
 
 /* ---------- master dimensions (mm) ---------- */
 W  = 128;             // outer width  (front = jack face)
@@ -203,8 +203,49 @@ module lid() {
   }
 }
 
+/* ============ DECK ============ */
+// The part the ESP32 actually lives in: a carrier plate that snaps
+// around a DevKit V1 and screws onto the base's four standoffs.
+// Pin headers hang through the opening; the board corners rest on
+// tabs and click under four small lips — no screws touch the ESP.
+// When the carrier PCB exists, it replaces this deck 1:1.
+dk_l = 49.5;          // DevKit V1 length (+0.5 tolerance)
+dk_w = 29.0;          // DevKit V1 width  (+0.4 tolerance)
+
+module deck_cradle() {           // L-wall + lip at one board corner
+  // walls outside the corner
+  translate([-2, -2, 2]) cube([10, 2, 3]);
+  translate([-2, -2, 2]) cube([2, 10, 3]);
+  // lips: hang 0.9 mm over the board top (board sits at z2..3.6)
+  translate([0, -0.1, 3.9]) cube([5, 1, 1]);
+  translate([-0.1, 0, 3.9]) cube([1, 5, 1]);
+}
+
+module deck() {
+  bay_x = (pcb_w - dk_l) / 2;
+  bay_y = (pcb_d - dk_w) / 2;
+  difference() {
+    cube([pcb_w, pcb_d, 2]);
+    // header opening — the crossing cutouts leave four corner tabs
+    translate([bay_x + 7, bay_y - 1, -1]) cube([dk_l - 14, dk_w + 2, 4]);
+    translate([bay_x - 1, bay_y + 7, -1]) cube([dk_l + 2, dk_w - 14, 4]);
+    // screw holes down to the base standoffs (M2.5)
+    for (x = [5, pcb_w - 5], y = [5, pcb_d - 5])
+      translate([x, y, -1]) cylinder(d = 3, h = 4);
+    // harness pass-through slots
+    translate([6, pcb_d/2 - 6, -1]) cube([4, 12, 4]);
+    translate([pcb_w - 10, pcb_d/2 - 6, -1]) cube([4, 12, 4]);
+  }
+  // four corner cradles, rotated around the bay
+  translate([bay_x, bay_y, 0]) deck_cradle();
+  translate([bay_x + dk_l, bay_y, 0]) rotate([0, 0, 90]) deck_cradle();
+  translate([bay_x + dk_l, bay_y + dk_w, 0]) rotate([0, 0, 180]) deck_cradle();
+  translate([bay_x, bay_y + dk_w, 0]) rotate([0, 0, 270]) deck_cradle();
+}
+
 /* ============ layout ============ */
 if (part == "base" || part == "both") base();
 if (part == "lid")  lid();
+if (part == "deck") deck();
 if (part == "both") translate([W + 16, 0, Tlid]) rotate([0, 180, 0])
   translate([-W, 0, -Tlid]) lid();   // shown print-orientation (face down)

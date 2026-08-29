@@ -826,7 +826,7 @@ function DownloadsCard({ fw }: { fw: { name: string; url: string }[] }) {
           </a>
           <span className="text-faint text-xs">— Rev A enclosure, OpenSCAD, parametric</span>
         </li>
-        {["flx-hub-1-base.stl", "flx-hub-1-lid.stl"].map((f) => (
+        {["flx-hub-1-base.stl", "flx-hub-1-lid.stl", "flx-hub-1-deck.stl"].map((f) => (
           <li key={f} className="flex items-center gap-2.5">
             <Hammer size={14} className="text-faint" />
             <a className="text-brass hover:underline"
