@@ -33,11 +33,11 @@ export default function Claim() {
 
   return (
     <div className="mx-auto max-w-sm pt-8">
-      <h1 className="text-xl font-semibold mb-2">Claim a device</h1>
+      <h1 className="text-2xl sm:text-[28px] font-semibold tracking-tight mb-2">Claim a device</h1>
       <p className="text-mute text-sm mb-6">
         The serial and claim code are on the label on the bottom of your device.
       </p>
-      <form onSubmit={submit} className="bg-panel border border-line rounded-xl p-6 space-y-4">
+      <form onSubmit={submit} className="card p-6 space-y-4">
         <div>
           <label className="block text-xs font-mono uppercase tracking-widest text-brass mb-1">Serial</label>
           <input
@@ -61,7 +61,7 @@ export default function Claim() {
         {error && <p className="text-danger text-sm">{error}</p>}
         <button
           disabled={busy}
-          className="w-full bg-brass text-ground font-medium rounded-lg py-2 hover:opacity-90 disabled:opacity-50"
+          className="w-full btn-brass font-medium rounded-lg py-2 hover:opacity-90 disabled:opacity-50"
         >
           {busy ? "…" : "Claim device"}
         </button>

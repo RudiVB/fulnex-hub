@@ -6,9 +6,24 @@ import {
 } from "recharts";
 import { motion } from "framer-motion";
 import {
+  Cpu, DoorOpen, Droplets, Gauge, Radar, Thermometer, Waves,
+} from "lucide-react";
+import {
   AlertRule, Device, Port, Reading, formatReading, isOnline, supabase, timeAgo,
 } from "../lib/supabase";
 import { FadeUp, LiveDot, Stagger, StaggerItem } from "../components/motion";
+
+function KindIcon({ kind, size = 16 }: { kind: string | null | undefined; size?: number }) {
+  const I =
+    kind === "temp" ? Thermometer
+    : kind === "moisture" || kind === "humidity" ? Droplets
+    : kind === "contact" ? DoorOpen
+    : kind === "motion" ? Radar
+    : kind === "level" ? Waves
+    : kind === "analog" ? Gauge
+    : Cpu;
+  return <I size={size} strokeWidth={1.75} />;
+}
 
 const RANGES = [
   { key: "6h", hours: 6 },
@@ -71,8 +86,8 @@ export default function DevicePage() {
   if (!device) {
     return (
       <div className="space-y-4">
-        <div className="bg-panel border border-line rounded-2xl h-28 animate-pulse" />
-        <div className="bg-panel border border-line rounded-2xl h-64 animate-pulse" />
+        <div className="card h-28 animate-pulse" />
+        <div className="card h-64 animate-pulse" />
       </div>
     );
   }
@@ -82,7 +97,7 @@ export default function DevicePage() {
 
   return (
     <div className="space-y-6">
-      <FadeUp className="bg-panel border border-line rounded-2xl p-5 sm:p-6">
+      <FadeUp className="card p-5 sm:p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <div className="flex items-center gap-3 mb-1">
@@ -140,15 +155,20 @@ export default function DevicePage() {
               const series = readings.filter((r) => r.port_no === portNo);
               const latest = series[series.length - 1];
               return (
-                <StaggerItem key={portNo} className="bg-panel border border-line rounded-2xl px-5 py-4">
-                  <div className="text-[11px] font-mono uppercase tracking-widest text-brass mb-1 truncate">
-                    {port?.label || `Port ${portNo}`}
-                  </div>
-                  <div className="text-2xl font-semibold tabular-nums">
-                    {latest ? formatReading(port?.kind ?? null, latest.value) : "–"}
-                  </div>
-                  <div className="text-faint text-[11px] font-mono mt-0.5">
-                    {port?.kind ?? "sensor"} · {latest ? timeAgo(latest.ts) : ""}
+                <StaggerItem key={portNo} className="card px-5 py-4">
+                  <div className="flex items-start gap-3.5">
+                    <span className="icon-chip shrink-0"><KindIcon kind={port?.kind} /></span>
+                    <div className="min-w-0">
+                      <div className="text-[11px] font-mono uppercase tracking-widest text-mute mb-0.5 truncate">
+                        {port?.label || `Port ${portNo}`}
+                      </div>
+                      <div className="text-2xl font-semibold tabular-nums leading-tight">
+                        {latest ? formatReading(port?.kind ?? null, latest.value) : "–"}
+                      </div>
+                      <div className="text-faint text-[11px] font-mono mt-0.5">
+                        {port?.kind ?? "sensor"} · {latest ? timeAgo(latest.ts) : ""}
+                      </div>
+                    </div>
                   </div>
                 </StaggerItem>
               );
@@ -158,7 +178,7 @@ export default function DevicePage() {
       )}
 
       {portNos.length === 0 ? (
-        <div className="bg-panel border border-line rounded-2xl p-8 text-center overflow-hidden">
+        <div className="card p-8 text-center overflow-hidden">
           <div className="relative inline-flex items-center justify-center w-16 h-16 mb-4">
             {[0, 1, 2].map((i) => (
               <motion.span
@@ -217,11 +237,12 @@ export default function DevicePage() {
             const latest = series[series.length - 1];
             const gradId = `grad-${portNo}`;
             return (
-              <FadeUp key={portNo} className="bg-panel border border-line rounded-2xl p-4 sm:p-5">
+              <FadeUp key={portNo} className="card p-4 sm:p-5">
                 <div className="flex items-baseline justify-between mb-3">
-                  <h2 className="font-medium">
+                  <h2 className="font-medium flex items-center gap-2.5">
+                    <span className="text-brass"><KindIcon kind={port?.kind} size={15} /></span>
                     {port?.label || `Port ${portNo}`}
-                    {port?.kind && <span className="text-faint text-xs font-mono ml-2">{port.kind}</span>}
+                    {port?.kind && <span className="text-faint text-xs font-mono ml-1">{port.kind}</span>}
                   </h2>
                   <span className="flex items-center gap-3">
                     {port?.kind === "analog" && latest && (
@@ -324,7 +345,7 @@ function RulesCard(props: {
   }
 
   return (
-    <div className="bg-panel border border-line rounded-2xl p-5">
+    <div className="card p-5">
       <h2 className="font-medium mb-4">Alert rules</h2>
       {props.rules.length > 0 && (
         <ul className="space-y-2 mb-5">
@@ -381,7 +402,7 @@ function RulesCard(props: {
             className="w-20 bg-ground border border-line rounded-lg px-2 py-1.5"
           />
         </label>
-        <button className="bg-brass text-ground font-medium rounded-lg px-4 py-1.5 hover:opacity-90">Add</button>
+        <button className="btn-brass font-medium rounded-lg px-4 py-1.5 hover:opacity-90">Add</button>
       </form>
       {error && <p className="text-danger text-sm mt-2">{error}</p>}
     </div>
@@ -415,7 +436,7 @@ function ShareCard(props: { deviceId: string }) {
   }
 
   return (
-    <div className="bg-panel border border-line rounded-2xl p-5">
+    <div className="card p-5">
       <h2 className="font-medium mb-1">Share this device</h2>
       <p className="text-mute text-sm mb-4">
         Give another Fulnex account live access — readings, charts, and controls.
@@ -431,7 +452,7 @@ function ShareCard(props: { deviceId: string }) {
         />
         <button
           disabled={busy}
-          className="bg-brass text-ground font-medium rounded-lg px-5 py-2 text-sm hover:opacity-90 disabled:opacity-50"
+          className="btn-brass font-medium rounded-lg px-5 py-2 text-sm hover:opacity-90 disabled:opacity-50"
         >
           {busy ? "…" : "Share"}
         </button>

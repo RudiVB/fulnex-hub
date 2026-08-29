@@ -14,7 +14,7 @@ const steps = [
           <a
             href="/firmware/fulnex_hub.ino"
             download
-            className="bg-brass text-ground font-medium rounded-lg px-4 py-2 text-sm hover:opacity-90"
+            className="btn-brass font-medium rounded-lg px-4 py-2 text-sm hover:opacity-90"
           >
             Download fulnex_hub.ino
           </a>
@@ -116,7 +116,7 @@ const steps = [
         </p>
         <Link
           to="/claim"
-          className="inline-block bg-brass text-ground font-medium rounded-lg px-5 py-2 text-sm hover:opacity-90"
+          className="inline-block btn-brass font-medium rounded-lg px-5 py-2 text-sm hover:opacity-90"
         >
           Claim your device
         </Link>
@@ -128,13 +128,13 @@ const steps = [
 export default function Setup() {
   return (
     <div className="max-w-2xl">
-      <h1 className="text-xl font-semibold mb-1">Set up your device</h1>
+      <h1 className="text-2xl sm:text-[28px] font-semibold tracking-tight mb-1">Set up your device</h1>
       <p className="text-mute mb-8">
         From box to first reading in about ten minutes. Nothing to install on your phone.
       </p>
       <ol className="space-y-4">
         {steps.map((s, i) => (
-          <li key={s.title} className="bg-panel border border-line rounded-xl p-5">
+          <li key={s.title} className="card p-5">
             <div className="flex items-baseline gap-3 mb-2">
               <span className="font-mono text-xs text-brass border border-line rounded-md px-2 py-0.5">
                 {String(i + 1).padStart(2, "0")}

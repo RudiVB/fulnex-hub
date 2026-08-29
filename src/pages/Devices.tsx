@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { Activity, Clock3, Wifi } from "lucide-react";
 import { Device, isOnline, supabase, timeAgo } from "../lib/supabase";
 import { AnimatedNumber, LiveDot, Stagger, StaggerItem } from "../components/motion";
 
@@ -107,7 +108,7 @@ export default function Devices() {
     return (
       <div className="grid gap-4 sm:grid-cols-2">
         {[0, 1].map((i) => (
-          <div key={i} className="bg-panel border border-line rounded-2xl h-36 animate-pulse" />
+          <div key={i} className="card h-36 animate-pulse" />
         ))}
       </div>
     );
@@ -125,7 +126,7 @@ export default function Devices() {
           the code on its label.
         </p>
         <div className="flex items-center justify-center gap-3">
-          <Link to="/claim" className="bg-brass text-ground font-medium rounded-lg px-5 py-2 hover:opacity-90">
+          <Link to="/claim" className="btn-brass font-medium rounded-lg px-5 py-2 hover:opacity-90">
             Claim a device
           </Link>
           <Link to="/setup" className="border border-line rounded-lg px-5 py-2 text-mute hover:border-brassdim hover:text-ink">
@@ -145,23 +146,39 @@ export default function Devices() {
 
   return (
     <div>
-      <Stagger className="grid grid-cols-1 min-[520px]:grid-cols-3 gap-3 sm:gap-4 mb-8">
-        <StaggerItem className="bg-panel border border-line rounded-2xl px-5 py-4">
-          <div className="text-[11px] font-mono uppercase tracking-widest text-brass mb-1">Online</div>
-          <div className="text-2xl font-semibold tabular-nums">
-            <AnimatedNumber value={online} />
-            <span className="text-faint text-base font-normal">/{devices.length}</span>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl sm:text-[28px] font-semibold tracking-tight">Monitor</h1>
+        <span className="inline-flex items-center gap-2 text-[11px] font-mono text-faint border border-line rounded-full px-3 py-1">
+          <span className="w-1.5 h-1.5 rounded-full bg-ok animate-pulse" />
+          live · refreshes every 30 s
+        </span>
+      </div>
+      <Stagger className="grid grid-cols-1 min-[520px]:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
+        <StaggerItem className="card px-5 py-4 flex items-center gap-4">
+          <span className="icon-chip"><Wifi size={17} strokeWidth={1.75} /></span>
+          <div>
+            <div className="text-[11px] font-mono uppercase tracking-widest text-mute mb-0.5">Online</div>
+            <div className="text-2xl font-semibold tabular-nums leading-none">
+              <AnimatedNumber value={online} />
+              <span className="text-faint text-base font-normal">/{devices.length}</span>
+            </div>
           </div>
         </StaggerItem>
-        <StaggerItem className="bg-panel border border-line rounded-2xl px-5 py-4">
-          <div className="text-[11px] font-mono uppercase tracking-widest text-brass mb-1">Readings · 24 h</div>
-          <div className="text-2xl font-semibold tabular-nums">
-            {count24 === null ? "–" : <AnimatedNumber value={count24} />}
+        <StaggerItem className="card px-5 py-4 flex items-center gap-4">
+          <span className="icon-chip"><Activity size={17} strokeWidth={1.75} /></span>
+          <div>
+            <div className="text-[11px] font-mono uppercase tracking-widest text-mute mb-0.5">Readings · 24 h</div>
+            <div className="text-2xl font-semibold tabular-nums leading-none">
+              {count24 === null ? "–" : <AnimatedNumber value={count24} />}
+            </div>
           </div>
         </StaggerItem>
-        <StaggerItem className="bg-panel border border-line rounded-2xl px-5 py-4">
-          <div className="text-[11px] font-mono uppercase tracking-widest text-brass mb-1">Last activity</div>
-          <div className="text-2xl font-semibold tabular-nums">{lastSeen ? timeAgo(lastSeen) : "–"}</div>
+        <StaggerItem className="card px-5 py-4 flex items-center gap-4">
+          <span className="icon-chip"><Clock3 size={17} strokeWidth={1.75} /></span>
+          <div>
+            <div className="text-[11px] font-mono uppercase tracking-widest text-mute mb-0.5">Last activity</div>
+            <div className="text-2xl font-semibold tabular-nums leading-none">{lastSeen ? timeAgo(lastSeen) : "–"}</div>
+          </div>
         </StaggerItem>
       </Stagger>
 
@@ -173,7 +190,7 @@ export default function Devices() {
             <StaggerItem key={d.id}>
               <Link
                 to={`/device/${d.id}`}
-                className="group block bg-panel border border-line rounded-2xl p-5 hover:border-brassdim transition-all hover:-translate-y-0.5 hover:shadow-[0_20px_50px_-30px_rgba(0,0,0,.9)]"
+                className="group block card card-hover p-5"
               >
                 <div className="flex items-center justify-between mb-1">
                   <span className="font-medium flex items-center gap-2.5">

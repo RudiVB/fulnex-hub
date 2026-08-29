@@ -70,7 +70,7 @@ export default function Login() {
       >
         <form
           onSubmit={submit}
-          className="bg-panel/80 backdrop-blur border border-line rounded-2xl p-6 sm:p-7 space-y-4 shadow-[0_30px_80px_-40px_rgba(0,0,0,.9)]"
+          className="card p-6 sm:p-7 space-y-4"
         >
           <h2 className="font-medium text-lg mb-1">
             {mode === "signin" ? "Welcome back" : "Create your account"}
@@ -101,7 +101,7 @@ export default function Login() {
           <motion.button
             whileTap={{ scale: 0.97 }}
             disabled={busy}
-            className="w-full bg-brass text-ground font-medium rounded-xl py-2.5 hover:opacity-90 disabled:opacity-50 transition-opacity"
+            className="w-full btn-brass font-medium rounded-xl py-2.5 disabled:opacity-50"
           >
             {busy ? "…" : mode === "signin" ? "Sign in" : "Create account"}
           </motion.button>
