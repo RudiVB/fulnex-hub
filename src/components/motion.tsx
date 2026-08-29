@@ -180,7 +180,7 @@ export function DeviceMark({ size = 150 }: { size?: number }) {
       initial={{ opacity: 0, scale: 0.92, rotate: -2 }}
       animate={{ opacity: 1, scale: 1, rotate: 0 }}
       transition={{ duration: 0.9, ease: easeOut }}
-      className="relative flex items-center justify-center border border-[#2a2d32]"
+      className="relative flex items-center justify-center border border-[#2a2d32] overflow-hidden"
       style={{
         width: size,
         height: size,
