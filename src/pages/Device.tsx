@@ -135,7 +135,19 @@ export default function DevicePage() {
                   {port?.label || `Port ${portNo}`}
                   {port?.kind && <span className="text-faint text-xs font-mono ml-2">{port.kind}</span>}
                 </h2>
-                {latest && <span className="font-mono text-brass text-lg">{latest.value.toFixed(1)}</span>}
+                <span className="flex items-center gap-3">
+                  {port?.kind === "analog" && latest && (
+                    <span
+                      className="w-8 h-8 rounded-lg border border-line inline-block"
+                      title="live colour — driven by the dial"
+                      style={{
+                        background: `hsl(${Math.round((latest.value / 100) * 300)} 75% 55%)`,
+                        boxShadow: `0 0 14px hsl(${Math.round((latest.value / 100) * 300)} 75% 55% / .45)`,
+                      }}
+                    />
+                  )}
+                  {latest && <span className="font-mono text-brass text-lg">{latest.value.toFixed(1)}</span>}
+                </span>
               </div>
               <div className="h-48">
                 <ResponsiveContainer width="100%" height="100%">
