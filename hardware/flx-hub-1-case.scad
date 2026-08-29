@@ -9,11 +9,13 @@
 //
 //  Assembly (Olof):
 //    1. print base + lid + deck, matte PETG, lid face-down
-//    2. press 11 stereo jacks + 1 four-pole (P10) into the front
+//    2. press the 2 rear jacks (P1 temp bus, P2 universal)
 //    3. snap the DevKit into the deck, screw deck onto standoffs
-//    4. relay module onto its posts; buck + USB-C into the trays
-//    5. zip-tie the harness on the front bridges
+//    4. buck + USB-C modules into their trays
+//    5. tie the short jack harness to the rear bridge
 //    6. lid on, 4 screws from UNDERNEATH, QR label in the recess
+//  Senses are FLX pucks over Bluetooth; wired probes use the two
+//  rear jacks. Relays/IO live in appliance SKUs, not this hub.
 // ============================================================
 
 /* ---------- what to render ---------- */
@@ -22,27 +24,29 @@ part = "both";        // "base" | "lid" | "deck" | "both"
 /* ---------- master dimensions (mm) ---------- */
 W  = 120;             // square squircle footprint
 D  = 120;
-H  = 38;              // base wall height (3 jack rows need it)
+H  = 34;              // base wall height (2 side rows fit)
 R  = 34;              // corner radius — properly soft, like the render
 T  = 2.4;             // wall
 Tf = 2.8;             // floor
 Tlid = 3.0;           // lid plate (crown rises above)
 
-/* ---------- front: 12 sense jacks on the flat chord ----------
-   flat front spans x = R .. W-R  (52 mm at R=34): 3 rows of 4  */
+/* ---------- Rev C: the SEALED hub ----------------------------
+   Senses reach the hub over Bluetooth (FLX pucks); the hub's job
+   is to listen and bridge to Wi-Fi. The body carries nothing but
+   power and two discreet rear jacks — P1 (the 8-probe temp bus)
+   and P2 (universal) — for the wired cases that genuinely earn
+   a cable (geyser probe, kas probe). Relays and IO breakouts
+   live in appliance products and the future FLX-IO, not here. */
 jack_d = 6.4;
-jack_cols = 4;  jack_pitch = 12;
-jack_rows_z = [9, 19, 29];          // three rows on the front wall
+rear_jack_xs = [62, 76];            // P1, P2 beside the USB
+rear_jack_z = 11;
 
-/* ---------- rear: USB-C + 3 output grommets ---------- */
-usb_w = 10; usb_h = 4.4; usb_cx = 43; usb_z = 8;
-out_d = 8.2; out_z = 12;
-out_xs = [56, 68, 80];
+/* ---------- rear: USB-C power ---------- */
+usb_w = 10; usb_h = 4.4; usb_cx = 44; usb_z = 8;
 
-/* ---------- interior fit-out ---------- */
-pcb_w = 70;  pcb_d = 50;  pcb_x = 18; pcb_y = 30;
+/* ---------- interior fit-out (sealed hub = simple) ---------- */
+pcb_w = 70;  pcb_d = 50;  pcb_x = 18; pcb_y = 34;
 standoff_h = 5;  standoff_d = 7;  screw_d = 2.6;
-relay_x = 90; relay_y = 30; relay_w = 26; relay_d = 48;
 buck_x = 30;  buck_y = 86;  buck_w = 26; buck_d = 18;
 psu_x  = 46;  psu_y  = 98;  psu_w  = 27; psu_d  = 16;
 
@@ -108,31 +112,21 @@ module base() {
             cylinder(d = standoff_d, h = standoff_h);
             cylinder(d = screw_d,    h = standoff_h + 1);
           }
-      // relay module posts, beside the grommets
-      for (x = [relay_x + 3, relay_x + relay_w - 3],
-           y = [relay_y + 3, relay_y + relay_d - 3])
-        post(x, y);
       // drop-in trays
       tray(buck_x, buck_y, buck_w, buck_d);
       tray(psu_x,  psu_y,  psu_w,  psu_d);
-      // harness bridges along the front
-      tiebar(34, 18);
-      tiebar(58, 18);
-      tiebar(78, 18);
+      // one harness bridge for the rear jack wires
+      tiebar(62, 90);
     }
 
-    // ---- front chord: 12 jacks, 3 rows of 4 ----
-    x0 = W/2 - (jack_cols - 1) * jack_pitch / 2;
-    for (c = [0 : jack_cols - 1], z = jack_rows_z)
-      translate([x0 + c * jack_pitch, T + 1, z])
-        rotate([90, 0, 0]) cylinder(d = jack_d, h = T + 4);
+    // ---- rear: two discreet sense jacks (P1 temp bus, P2) ----
+    for (x = rear_jack_xs)
+      translate([x, D - T - 1, rear_jack_z])
+        rotate([-90, 0, 0]) cylinder(d = jack_d, h = T + 4);
 
-    // ---- rear chord: USB-C + grommets ----
+    // ---- rear chord: USB-C power ----
     translate([usb_cx - usb_w/2, D - T - 1, usb_z - usb_h/2])
       cube([usb_w, T + 4, usb_h]);
-    for (x = out_xs)
-      translate([x, D - T - 1, out_z])
-        rotate([-90, 0, 0]) cylinder(d = out_d, h = T + 4);
 
     // ---- lid screws come up from BELOW: countersunk floor holes ----
     for (p = lidpost_xy) {

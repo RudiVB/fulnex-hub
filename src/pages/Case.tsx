@@ -1,110 +1,84 @@
 import { CaseViewer } from "../components/CaseViewer";
 import { FadeUp } from "../components/motion";
 
-// The FLX-HUB-1 design dossier: the live geometry, what every hole
-// is for, and how the unit goes together. Public and unlinked —
-// share the /case URL with anyone who needs to build or inspect.
+// The FLX-HUB-1 design dossier — Rev C, the sealed hub.
+// Public and unlinked: share /case with anyone who builds or inspects.
 
-const FRONT_ROWS: { row: string; ports: { p: string; what: string; why: string }[] }[] = [
+const ARCHITECTURE = [
   {
-    row: "Top row",
-    ports: [
-      { p: "P9", what: "Universal sense · GPIO5", why: "door, motion, DHT22, soil — whatever's plugged in" },
-      { p: "P10", what: "Level / distance · GPIO16+17", why: "4-pole jack — the ultrasonic sensor needs two signals" },
-      { p: "P11", what: "Analog sense · GPIO34", why: "dials, light sensors — input-only pin, perfect for analog" },
-      { p: "P12", what: "Mains sense · GPIO35", why: "divided-down \"is the power on?\" — load-shedding detection" },
-    ],
+    t: "Bluetooth senses — the pucks",
+    d: "Temp/humidity, door, motion: small battery pucks you stick anywhere. They broadcast; the hub listens. No pairing, no limit — one hub hears every puck in the house. Battery lasts about a year.",
   },
   {
-    row: "Middle row",
-    ports: [
-      { p: "P5", what: "Universal sense · GPIO27", why: "any plug-in sense" },
-      { p: "P6", what: "Universal sense · GPIO14", why: "any plug-in sense" },
-      { p: "P7", what: "Universal sense · GPIO13", why: "any plug-in sense" },
-      { p: "P8", what: "Universal sense · GPIO4", why: "any plug-in sense" },
-    ],
+    t: "Wired senses — the two rear jacks",
+    d: "P1 is the temperature bus: up to 8 probes daisy-chained on one cable — geyser, pool, fridge. P2 takes any single wired sense. Wires win where a probe must physically touch something: no battery, R30 instead of R250.",
   },
   {
-    row: "Bottom row",
-    ports: [
-      { p: "P1", what: "Temperature bus · GPIO32", why: "1-Wire: up to 8 temp probes daisy-chained on ONE jack" },
-      { p: "P2", what: "Universal sense · GPIO33", why: "any plug-in sense" },
-      { p: "P3", what: "Universal sense · GPIO25", why: "any plug-in sense — bench-fired per unit (the GPIO25 rule)" },
-      { p: "P4", what: "Universal sense · GPIO26", why: "any plug-in sense" },
-    ],
+    t: "Switching lives elsewhere",
+    d: "Things that control fans, lights, pumps or a geyser are their own powered products (the Biltong Cabinet already works this way — it talks straight to the cloud). The pro 12-port breakout becomes FLX-IO, a separate module for business installs.",
   },
 ];
 
-const OTHER_HOLES: { where: string; hole: string; why: string }[] = [
+const HOLES: { where: string; hole: string; why: string }[] = [
   { where: "Rear", hole: "USB-C cutout", why: "Power in — 5 V, nothing else. The power module sits in a tray right behind it." },
-  { where: "Rear", hole: "3 round grommets — O1 (GPIO23) · O2 (GPIO18) · O3 (GPIO19)", why: "Output cables out: from the relays inside to whatever they switch — lights, fans, a pump. O1 can dim (PWM) when driving an LED load instead of a relay." },
+  { where: "Rear", hole: "2 jack holes — P1 (GPIO32) · P2 (GPIO33)", why: "The wired escape hatch: P1 = 8-probe temperature bus, P2 = any sense. Tip = signal, ring = 3V3, sleeve = GND. Invisible from the front — plug in once, forget." },
   { where: "Lid, top face", hole: "1 tiny hole below the FULNEX deboss", why: "The light pipe — a clear filament stub carries the status LED to the surface. The breathing dot from the renders." },
-  { where: "Base, underside", hole: "4 countersunk screw holes", why: "The only screws in the product, hidden underneath — they reach up into the lid's posts, so the top and sides stay seamless." },
-  { where: "Base, underside", hole: "34 mm square recess", why: "The QR label lives here — serial, claim code, and the QR the customer scans to claim." },
-  { where: "Base, floor", hole: "8 vent slots", why: "Airflow under the electronics. Positioned under the board, clear of the trays." },
-  { where: "Inside", hole: "4 low standoffs + 4 relay posts + 2 open trays + 3 zip-tie bridges", why: "Every internal part has exactly one home: ESP deck on the standoffs, relay module on its posts beside the grommets, buck + USB-C modules drop into the trays (the lid holds them), harness ties to the bridges." },
+  { where: "Base, underside", hole: "4 countersunk screw holes", why: "The only screws in the product, hidden underneath — they reach up into the lid's posts. Top and sides stay seamless." },
+  { where: "Base, underside", hole: "34 mm square recess", why: "The QR label: serial, claim code, and the QR the customer scans to claim." },
+  { where: "Base, floor", hole: "8 vent slots", why: "Airflow under the electronics, positioned beneath the board." },
+  { where: "Inside", hole: "4 standoffs · 2 open trays · 1 zip-tie bridge", why: "The ESP deck screws onto the standoffs; the buck and USB-C power modules drop into the trays (the lid holds them seated); the short rear-jack harness ties to the bridge." },
 ];
 
 const STEPS: string[] = [
-  "Print all three parts in matte black PETG — the lid face-down for a crisp FULNEX deboss. Press a clear filament stub into the lid's light-pipe hole.",
-  "Press the 11 stereo jacks + 1 four-pole jack (P10, top row) into the front holes, nuts on the inside.",
+  "Print all three parts in matte black PETG — the lid face-down for a crisp FULNEX deboss. Press a clear filament stub into the light-pipe hole.",
+  "Press the two jacks into the rear holes (P1 temp bus, P2 universal), nuts on the inside.",
   "Snap the ESP32 DevKit into the deck — corners under the four lips, pin headers hanging through the opening.",
-  "Screw the deck onto the four standoffs (M2.5). The deck's screw holes line up with them 1:1.",
-  "Screw the relay module onto its four posts in the right column — shortest wires to the output grommets.",
-  "Drop the buck converter and USB-C power module into their trays. No screws — the lid's lip keeps them seated.",
-  "Wire the jacks (tip = signal, ring = 3V3, sleeve = GND) and zip-tie the harness to the three front bridges.",
-  "Route the three output cables through the rear grommets to their relay terminals.",
-  "Lid on. Four countersunk screws from underneath. Stick the printed QR label into the base recess.",
-  "QC before boxing: hold BOOT while powering on — jig mode fires every output and prints every input. No pin unproven.",
+  "Screw the deck onto the four standoffs (M2.5).",
+  "Drop the buck converter and USB-C power module into their trays — no screws, the lid keeps them seated.",
+  "Wire the two jacks (tip = signal, ring = 3V3, sleeve = GND) and tie the short harness to the bridge.",
+  "Lid on. Four countersunk screws from underneath. QR label into the base recess.",
+  "QC before boxing: hold BOOT while powering on — jig mode prints every input. No pin unproven.",
 ];
 
 export default function CasePage() {
   return (
     <div className="mx-auto max-w-3xl px-4 sm:px-6 py-10 pb-16">
       <FadeUp>
-        <div className="text-[10px] font-mono uppercase tracking-[0.25em] text-brass mb-1">FLX-HUB-1 · REV B2</div>
-        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight mb-1">The case</h1>
+        <div className="text-[10px] font-mono uppercase tracking-[0.25em] text-brass mb-1">FLX-HUB-1 · REV C</div>
+        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight mb-1">The sealed hub</h1>
         <p className="text-mute text-sm mb-5">
-          The actual print geometry, live from the STL. Drag to inspect — then every hole,
-          and why it's there.
+          Hands-free by design: senses reach it over Bluetooth, two wired probes plug in
+          at the back once, and the face carries nothing but the light. Drag to inspect —
+          this is the actual print geometry.
         </p>
         <CaseViewer />
       </FadeUp>
 
-      {/* ---- front ports ---- */}
+      {/* ---- the architecture ---- */}
       <FadeUp className="mt-10" delay={0.05}>
-        <h2 className="text-[11px] font-mono uppercase tracking-[0.2em] text-brass mb-1">
-          Front — 12 sense jacks, 3 rows of 4
+        <h2 className="text-[11px] font-mono uppercase tracking-[0.2em] text-brass mb-3">
+          How senses reach it — wires where they touch, Bluetooth where they roam
         </h2>
-        <p className="text-mute text-sm mb-4">
-          Every jack is wired the same: <span className="font-mono text-ink">tip = signal · ring = 3V3 · sleeve = GND</span> —
-          a sense clicks in like headphones and the dashboard learns what it is.
-        </p>
-        <div className="space-y-4">
-          {FRONT_ROWS.map((r) => (
-            <div key={r.row}>
-              <div className="text-faint text-[10px] font-mono uppercase tracking-widest mb-1.5">{r.row}</div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                {r.ports.map((p) => (
-                  <div key={p.p} className="border border-line rounded-xl px-3 py-2.5 bg-ground">
-                    <div className="font-mono text-brass text-sm">{p.p}</div>
-                    <div className="text-xs text-ink mt-0.5">{p.what}</div>
-                    <div className="text-faint text-[11px] leading-snug mt-1">{p.why}</div>
-                  </div>
-                ))}
-              </div>
+        <div className="space-y-2.5">
+          {ARCHITECTURE.map((a) => (
+            <div key={a.t} className="border border-line rounded-xl px-4 py-3.5">
+              <div className="text-sm font-medium mb-0.5">{a.t}</div>
+              <p className="text-mute text-sm leading-relaxed">{a.d}</p>
             </div>
           ))}
         </div>
+        <p className="text-faint text-xs font-mono mt-3">
+          one ESP32 runs all of it — Wi-Fi to the cloud, Bluetooth listening, and the wired bus, simultaneously
+        </p>
       </FadeUp>
 
-      {/* ---- every other hole ---- */}
+      {/* ---- every opening ---- */}
       <FadeUp className="mt-10" delay={0.08}>
         <h2 className="text-[11px] font-mono uppercase tracking-[0.2em] text-brass mb-3">
-          Every other opening, and why
+          Every opening, and why
         </h2>
         <div className="space-y-2.5">
-          {OTHER_HOLES.map((h) => (
+          {HOLES.map((h) => (
             <div key={h.hole} className="border border-line rounded-xl px-4 py-3">
               <div className="flex flex-wrap items-baseline gap-2">
                 <span className="text-[10px] font-mono uppercase tracking-wider text-faint">{h.where}</span>
@@ -119,7 +93,7 @@ export default function CasePage() {
       {/* ---- assembly ---- */}
       <FadeUp className="mt-10" delay={0.1}>
         <h2 className="text-[11px] font-mono uppercase tracking-[0.2em] text-brass mb-3">
-          Assembly — ten steps, one sitting
+          Assembly — eight steps, one sitting
         </h2>
         <ol className="space-y-2.5">
           {STEPS.map((s, i) => (
@@ -130,7 +104,7 @@ export default function CasePage() {
           ))}
         </ol>
         <p className="text-faint text-xs font-mono mt-6 text-center">
-          FLX-HUB-1 · 120 × 120 × 41 mm · matte black PETG · designed in South Africa
+          FLX-HUB-1 · 120 × 120 × 40 mm · matte black PETG · designed in South Africa
         </p>
       </FadeUp>
     </div>
