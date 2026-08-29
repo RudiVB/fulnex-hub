@@ -10,7 +10,7 @@
 #define DEVICE_KEY       "olof-first-device-key-8c31"
 #define CLAIM_CODE       "OLOF01"           // shown on the setup portal
 #define MQTT_SECRET      "flx2-9k2m4vq7x"   // instant-command topic secret
-#define FIRMWARE_VERSION "1.1.0"
+#define FIRMWARE_VERSION "1.1.2"
 
 // Platform
 #define INGEST_URL "https://esqtrcxaozymslwpeqgu.supabase.co/functions/v1/ingest"

@@ -123,9 +123,13 @@ String strFromBody(const String& body, const char* key) {
   return body.substring(a + 1, b);
 }
 
+int appliedOut1 = 0;     // what the LED output is actually doing, 0-100
+int appliedOut2 = 0;     // what output 2 is actually doing, 0/1
+
 void setOut1Duty(int pct) {
   if (pct < 0) pct = 0;
   if (pct > 100) pct = 100;
+  appliedOut1 = pct;
 #if defined(ESP_ARDUINO_VERSION_MAJOR) && ESP_ARDUINO_VERSION_MAJOR >= 3
   ledcWrite(OUT1_PIN, pct * 255 / 100);
 #else
@@ -252,6 +256,13 @@ void readSenses() {
   }
 #endif
 
+  // outputs report back what they're actually doing — the dashboard
+  // confirms commands instead of assuming them
+  if (curCount < 12) cur[curCount++] = { 21, (float)appliedOut1, "analog" };
+#if OUT2_PIN >= 0
+  if (curCount < 12) cur[curCount++] = { 22, (float)appliedOut2, "contact" };
+#endif
+
 #if ENABLE_BLE_SCAN
   bleScanInto();
 #endif
@@ -292,8 +303,8 @@ void applyControls(const String& body) {
   }
 
 #if OUT2_PIN >= 0
-  if (body.indexOf("\"led2\":true") >= 0)  digitalWrite(OUT2_PIN, HIGH);
-  if (body.indexOf("\"led2\":false") >= 0) digitalWrite(OUT2_PIN, LOW);
+  if (body.indexOf("\"led2\":true") >= 0)  { digitalWrite(OUT2_PIN, HIGH); appliedOut2 = 1; }
+  if (body.indexOf("\"led2\":false") >= 0) { digitalWrite(OUT2_PIN, LOW);  appliedOut2 = 0; }
 
   long pid = numFromBody(body, "\"pulse_id\":", -1);
   if (pid >= 0) {
