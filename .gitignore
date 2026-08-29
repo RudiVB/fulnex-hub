@@ -3,3 +3,6 @@ dist/
 .env
 .env.local
 *.local
+
+firmware/build/
+firmware/fulnex_hub/build/
