@@ -60,13 +60,16 @@ Deno.serve(async (req) => {
   }
 
   const now = new Date().toISOString();
+  const base = Date.now();
   const rows = (Array.isArray(body.readings) ? body.readings : [])
     .filter((r: any) => Number.isFinite(r?.value) && Number.isInteger(r?.port))
     .slice(0, 500)
-    .map((r: any) => ({
+    .map((r: any, i: number) => ({
       device_id: device.id,
       port_no: r.port,
-      ts: typeof r.ts === "string" ? r.ts : now,
+      // un-timestamped rows each get a unique millisecond so a batch
+      // never collides with itself on the primary key
+      ts: typeof r.ts === "string" ? r.ts : new Date(base + i).toISOString(),
       value: r.value,
     }));
 

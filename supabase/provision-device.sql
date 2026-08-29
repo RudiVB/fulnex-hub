@@ -14,7 +14,7 @@ with vals as (
 )
 , dev as (
   insert into public.devices (serial, key_hash, role)
-  select serial, encode(digest(device_key, 'sha256'), 'hex'), 'hub' from vals
+  select serial, encode(extensions.digest(device_key, 'sha256'), 'hex'), 'hub' from vals
   returning serial
 )
 insert into public.claims (serial, claim_code)
