@@ -100,14 +100,23 @@ async function drain(onlyUser?: string): Promise<{ sent: number; dropped: number
   return { sent, dropped };
 }
 
+const CORS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, content-type, x-notify-key",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
 Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { status: 204, headers: CORS });
+  }
   if (req.method !== "POST") {
-    return Response.json({ ok: false, error: "POST only" }, { status: 405 });
+    return Response.json({ ok: false, error: "POST only" }, { status: 405, headers: CORS });
   }
 
   // trusted callers: cron sweep + ingest poke
   if (req.headers.get("x-notify-key") === Deno.env.get("NOTIFY_KEY")) {
-    return Response.json({ ok: true, ...(await drain()) });
+    return Response.json({ ok: true, ...(await drain()) }, { headers: CORS });
   }
 
   // signed-in user sending themselves a test
@@ -126,9 +135,9 @@ Deno.serve(async (req) => {
         url: "/",
         category: "alerts",
       });
-      return Response.json({ ok: true, ...(await drain(user.id)) });
+      return Response.json({ ok: true, ...(await drain(user.id)) }, { headers: CORS });
     }
   }
 
-  return Response.json({ ok: false, error: "unauthorized" }, { status: 401 });
+  return Response.json({ ok: false, error: "unauthorized" }, { status: 401, headers: CORS });
 });
