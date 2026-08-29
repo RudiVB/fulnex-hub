@@ -27,7 +27,7 @@ function NavItem({ to, label }: { to: string; label: string }) {
       {active && (
         <motion.span
           layoutId="nav-underline"
-          className="absolute left-0 right-0 -bottom-[17px] h-px bg-brass shadow-[0_0_8px_rgba(201,164,76,.8)]"
+          className="absolute left-0 right-0 -bottom-[17px] h-px bg-ink shadow-[0_0_8px_rgba(255,255,255,.8)]"
         />
       )}
     </Link>
@@ -80,11 +80,11 @@ export default function App() {
           <div className="mx-auto max-w-5xl px-4 sm:px-6 h-14 flex items-center justify-between">
             <Link to="/" className="font-display tracking-widest text-sm inline-flex items-center gap-2.5">
               <motion.span
-                className="w-2 h-2 rounded-full bg-brass"
+                className="w-2 h-2 rounded-full bg-white"
                 animate={{ boxShadow: [
-                  "0 0 6px rgba(201,164,76,.5)",
-                  "0 0 12px rgba(201,164,76,.9)",
-                  "0 0 6px rgba(201,164,76,.5)",
+                  "0 0 6px rgba(255,255,255,.5)",
+                  "0 0 14px rgba(255,255,255,.95)",
+                  "0 0 6px rgba(255,255,255,.5)",
                 ] }}
                 transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
               />

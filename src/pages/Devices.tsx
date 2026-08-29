@@ -24,7 +24,7 @@ function Sparkline({ points }: { points: SparkPoint[] }) {
     <svg width={w} height={h} className="block">
       <motion.path
         d={`${d}L${sx(last.ts).toFixed(1)},${h - pad}L${sx(points[0].ts).toFixed(1)},${h - pad}Z`}
-        fill="rgba(201,164,76,0.12)"
+        fill="rgba(255,255,255,0.10)"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.8, delay: 0.6 }}
@@ -32,7 +32,7 @@ function Sparkline({ points }: { points: SparkPoint[] }) {
       <motion.path
         d={d}
         fill="none"
-        stroke="#c9a44c"
+        stroke="#e4e3dd"
         strokeWidth="1.5"
         strokeLinejoin="round"
         initial={{ pathLength: 0 }}
@@ -43,7 +43,7 @@ function Sparkline({ points }: { points: SparkPoint[] }) {
         cx={sx(last.ts)}
         cy={sy(last.value)}
         r="2.5"
-        fill="#c9a44c"
+        fill="#e4e3dd"
         initial={{ opacity: 0, scale: 0 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: 1, duration: 0.3 }}

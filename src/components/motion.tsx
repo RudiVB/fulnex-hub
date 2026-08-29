@@ -68,11 +68,11 @@ export function LiveDot({ online }: { online: boolean }) {
   return (
     <span className="relative inline-flex w-2.5 h-2.5">
       {online && (
-        <span className="absolute inset-0 rounded-full bg-ok animate-ping opacity-60" />
+        <span className="absolute inset-0 rounded-full bg-white animate-ping opacity-50" />
       )}
       <span
         className={`relative w-2.5 h-2.5 rounded-full ${
-          online ? "bg-ok shadow-[0_0_10px_rgba(74,222,128,.7)]" : "bg-faint"
+          online ? "bg-white shadow-[0_0_12px_rgba(255,255,255,.85)]" : "bg-faint"
         }`}
       />
     </span>
@@ -106,16 +106,27 @@ export function DeviceMark({ size = 150 }: { size?: number }) {
         FULNEX
       </span>
       <motion.span
-        className="absolute rounded-full bg-ok"
+        className="absolute rounded-full bg-white"
         style={{
-          width: size * 0.04,
-          height: size * 0.04,
+          width: size * 0.045,
+          height: size * 0.045,
           right: "16%",
           bottom: "16%",
-          boxShadow: "0 0 10px 3px rgba(74,222,128,.5)",
+          boxShadow: "0 0 14px 4px rgba(255,255,255,.6)",
         }}
-        animate={{ opacity: [1, 0.3, 1] }}
+        animate={{ opacity: [1, 0.35, 1] }}
         transition={{ duration: 3.6, repeat: Infinity, ease: "easeInOut" }}
+      />
+      <motion.span
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          borderRadius: "22%",
+          background:
+            "linear-gradient(115deg, transparent 35%, rgba(255,255,255,.09) 50%, transparent 65%)",
+        }}
+        initial={{ x: "-130%" }}
+        animate={{ x: "130%" }}
+        transition={{ duration: 3.2, repeat: Infinity, repeatDelay: 2.4, ease: "easeInOut" }}
       />
     </motion.div>
   );

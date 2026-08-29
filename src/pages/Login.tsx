@@ -34,17 +34,17 @@ export default function Login() {
   return (
     <div className="grid lg:grid-cols-2 gap-12 lg:gap-8 items-center pt-6 lg:pt-16">
       <div className="flex flex-col items-center lg:items-start text-center lg:text-left">
-        <DeviceMark size={170} />
+        <DeviceMark size={210} />
         <motion.h1
-          className="font-display tracking-[0.18em] text-2xl sm:text-3xl mt-10 mb-3"
-          initial={{ opacity: 0, letterSpacing: "0.4em" }}
+          className="font-display tracking-[0.18em] text-4xl sm:text-5xl mt-10 mb-4 text-ink"
+          initial={{ opacity: 0, letterSpacing: "0.42em" }}
           animate={{ opacity: 1, letterSpacing: "0.18em" }}
-          transition={{ duration: 1.1, ease: easeOut, delay: 0.15 }}
+          transition={{ duration: 1.2, ease: easeOut, delay: 0.15 }}
         >
           FULNEX
         </motion.h1>
         <motion.p
-          className="text-mute text-lg max-w-xs"
+          className="text-mute text-xl max-w-xs"
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.5, ease: easeOut }}

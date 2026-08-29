@@ -125,7 +125,7 @@ export default function DevicePage() {
             <span className="text-xs font-mono uppercase tracking-widest text-mute group-hover:text-ink">LED</span>
             <span
               className={`relative w-11 h-6 rounded-full transition-colors flex items-center px-0.5 ${
-                device.led_on ? "bg-brass justify-end shadow-[0_0_14px_rgba(201,164,76,.5)]" : "bg-line justify-start"
+                device.led_on ? "bg-brass justify-end shadow-[0_0_14px_rgba(255,255,255,.35)]" : "bg-line justify-start"
               }`}
             >
               <motion.span
@@ -189,7 +189,7 @@ export default function DevicePage() {
                 transition={{ duration: 2.4, repeat: Infinity, delay: i * 0.8, ease: "easeOut" }}
               />
             ))}
-            <span className="w-2.5 h-2.5 rounded-full bg-brass shadow-[0_0_12px_rgba(201,164,76,.8)]" />
+            <span className="w-2.5 h-2.5 rounded-full bg-brass shadow-[0_0_12px_rgba(255,255,255,.7)]" />
           </div>
           <div className="text-brass font-mono text-xs mb-3">
             listening — this page checks every 30 seconds
@@ -274,14 +274,14 @@ export default function DevicePage() {
                           labelStyle={{ color: "#8f939a" }}
                           formatter={(v) => [Number(v) >= 0.5 ? "CLOSED" : "OPEN", ""]}
                         />
-                        <Line type="stepAfter" dataKey="value" stroke="#c9a44c" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
+                        <Line type="stepAfter" dataKey="value" stroke="#e4e3dd" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
                       </LineChart>
                     ) : (
                       <AreaChart data={series}>
                         <defs>
                           <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor="#c9a44c" stopOpacity={0.25} />
-                            <stop offset="100%" stopColor="#c9a44c" stopOpacity={0} />
+                            <stop offset="0%" stopColor="#e4e3dd" stopOpacity={0.25} />
+                            <stop offset="100%" stopColor="#e4e3dd" stopOpacity={0} />
                           </linearGradient>
                         </defs>
                         <CartesianGrid stroke="#1e2125" vertical={false} />
@@ -292,7 +292,7 @@ export default function DevicePage() {
                           labelStyle={{ color: "#8f939a" }}
                           formatter={(v) => [formatReading(port?.kind ?? null, Number(v)), ""]}
                         />
-                        <Area type="monotone" dataKey="value" stroke="#c9a44c" strokeWidth={2} fill={`url(#${gradId})`} dot={false} activeDot={{ r: 4 }} />
+                        <Area type="monotone" dataKey="value" stroke="#e4e3dd" strokeWidth={2} fill={`url(#${gradId})`} dot={false} activeDot={{ r: 4 }} />
                       </AreaChart>
                     )}
                   </ResponsiveContainer>
