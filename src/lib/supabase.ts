@@ -26,6 +26,7 @@ export type Device = {
   free_heap: number | null;
   boot_reason: string | null;
   mqtt_secret: string | null;
+  product: string | null;
 };
 
 export function fmtUptime(s: number): string {
