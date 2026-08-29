@@ -5,3 +5,15 @@
 body {
   @apply bg-ground text-ink font-body antialiased;
 }
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(700px 320px at 50% -140px, rgba(201, 164, 76, 0.07), transparent 70%);
+}
+
+::selection {
+  background: rgba(201, 164, 76, 0.3);
+}

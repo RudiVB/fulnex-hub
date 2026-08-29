@@ -40,7 +40,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen">
-      <header className="border-b border-line">
+      <header className="border-b border-line sticky top-0 z-10 bg-ground/85 backdrop-blur">
         <div className="mx-auto max-w-4xl px-5 h-14 flex items-center justify-between">
           <Link to="/" className="font-display tracking-widest text-sm inline-flex items-center gap-2.5">
             <span className="w-2 h-2 rounded-full bg-brass shadow-[0_0_8px_rgba(201,164,76,.7)]" />
