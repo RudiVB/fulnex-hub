@@ -91,8 +91,14 @@ export default function Devices() {
       }
       const chosen: Record<string, SparkPoint[]> = {};
       for (const [devId, ports] of Object.entries(byDevice)) {
-        const best = Object.values(ports).sort((a, b) => b.length - a.length)[0];
-        if (best) chosen[devId] = best;
+        // prefer real senses (ports < 20) over output echoes for the card
+        const entries = Object.entries(ports).sort((a, b) => {
+          const aSense = Number(a[0]) < 20 ? 0 : 1;
+          const bSense = Number(b[0]) < 20 ? 0 : 1;
+          if (aSense !== bSense) return aSense - bSense;
+          return b[1].length - a[1].length;
+        });
+        if (entries.length) chosen[devId] = entries[0][1];
       }
       setSparks(chosen);
     }

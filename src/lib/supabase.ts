@@ -72,6 +72,30 @@ export function timeAgo(iso: string | null): string {
   return `${Math.floor(s / 86400)}d ago`;
 }
 
+export function defaultPortName(port: number): string {
+  switch (port) {
+    case 1: return "Temperature";
+    case 2: return "Temperature 2";
+    case 3: return "Temperature 3";
+    case 4: return "Dial";
+    case 5: return "Door";
+    case 6: return "Motion";
+    case 8: return "Temperature";
+    case 9: return "Humidity";
+    case 10: return "Soil moisture";
+    case 11: return "Level";
+    case 12: return "Soil bed 2";
+    case 20: return "Mains power";
+    case 21: return "Output 1 level";
+    case 22: return "Output 2 state";
+    case 23: return "Output 3 state";
+    case 30: return "BLE temperature";
+    case 31: return "BLE humidity";
+    case 32: return "BLE battery";
+    default: return `Port ${port}`;
+  }
+}
+
 export function formatReading(kind: string | null, value: number): string {
   switch (kind) {
     case "temp": return `${value.toFixed(1)} °C`;

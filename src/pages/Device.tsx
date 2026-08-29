@@ -10,7 +10,7 @@ import {
   Cpu, DoorOpen, Droplets, Gauge, Radar, Thermometer, Waves,
 } from "lucide-react";
 import {
-  AlertRule, Device, Port, Reading, fmtUptime, formatReading, isOnline, supabase, timeAgo,
+  AlertRule, Device, Port, Reading, defaultPortName, fmtUptime, formatReading, isOnline, supabase, timeAgo,
 } from "../lib/supabase";
 import { FadeUp, LiveDot, Stagger, StaggerItem } from "../components/motion";
 
@@ -126,6 +126,20 @@ export default function DevicePage() {
     load();
   }
 
+  async function renamePort(portNo: number) {
+    const port = ports.find((p) => p.port_no === portNo);
+    const current = port?.label || defaultPortName(portNo);
+    const next = window.prompt("Name this sense:", current);
+    if (next === null || !port) return;
+    await supabase.from("ports").update({ label: next.trim() || null }).eq("id", port.id);
+    load();
+  }
+
+  function portName(portNo: number): string {
+    const port = ports.find((p) => p.port_no === portNo);
+    return port?.label || defaultPortName(portNo);
+  }
+
   if (!device) {
     return (
       <div className="space-y-4">
@@ -170,7 +184,20 @@ export default function DevicePage() {
             className="flex items-center gap-3 group"
             title={instant ? "instant" : "applies on the device's next report"}
           >
-            <span className="text-xs font-mono uppercase tracking-widest text-mute group-hover:text-ink">LED</span>
+            <span
+              className="text-xs font-mono uppercase tracking-widest text-mute group-hover:text-ink"
+              onClick={async (e) => {
+                e.stopPropagation();
+                const cur = ((device.desired ?? {}) as Record<string, unknown>).out1_label as string || "LED";
+                const next = window.prompt("Name this output:", cur);
+                if (next === null) return;
+                await supabase.rpc("patch_desired", { p_device_id: device.id, p_patch: { out1_label: next.trim() || "LED" } });
+                load();
+              }}
+              title="click to rename"
+            >
+              {(((device.desired ?? {}) as Record<string, unknown>).out1_label as string) || "LED"}
+            </span>
             <span
               className={`relative w-11 h-6 rounded-full transition-colors flex items-center px-0.5 ${
                 device.led_on ? "bg-brass justify-end shadow-[0_0_14px_rgba(255,255,255,.35)]" : "bg-line justify-start"
@@ -209,9 +236,13 @@ export default function DevicePage() {
                   <div className="flex items-start gap-3.5">
                     <span className="icon-chip shrink-0"><KindIcon kind={port?.kind} /></span>
                     <div className="min-w-0">
-                      <div className="text-[11px] font-mono uppercase tracking-widest text-mute mb-0.5 truncate">
-                        {port?.label || `Port ${portNo}`}
-                      </div>
+                      <button
+                        onClick={() => renamePort(portNo)}
+                        className="text-[11px] font-mono uppercase tracking-widest text-mute mb-0.5 truncate hover:text-ink text-left"
+                        title="click to rename"
+                      >
+                        {portName(portNo)}
+                      </button>
                       <div className="text-2xl font-semibold tabular-nums leading-tight">
                         {latest ? formatReading(port?.kind ?? null, latest.value) : "–"}
                       </div>
@@ -291,7 +322,9 @@ export default function DevicePage() {
                 <div className="flex items-baseline justify-between mb-3">
                   <h2 className="font-medium flex items-center gap-2.5">
                     <span className="text-brass"><KindIcon kind={port?.kind} size={15} /></span>
-                    {port?.label || `Port ${portNo}`}
+                    <button onClick={() => renamePort(portNo)} className="hover:text-brass transition-colors" title="click to rename">
+                      {portName(portNo)}
+                    </button>
                     {port?.kind && <span className="text-faint text-xs font-mono ml-1">{port.kind}</span>}
                   </h2>
                   <span className="flex items-center gap-3">
@@ -481,7 +514,17 @@ function ControlsCard({ device, onChange, publish, instant }: {
       </div>
       <div className="flex flex-wrap items-center gap-x-8 gap-y-5">
         <button onClick={() => updateDesired({ led2: !led2 })} className="flex items-center gap-3 group">
-          <span className="text-xs font-mono uppercase tracking-widest text-mute group-hover:text-ink">Output 2</span>
+          <span
+            className="text-xs font-mono uppercase tracking-widest text-mute group-hover:text-ink"
+            onClick={(e) => {
+              e.stopPropagation();
+              const next = window.prompt("Name this output:", (desired.out2_label as string) || "Output 2");
+              if (next !== null) updateDesired({ out2_label: next.trim() || "Output 2" });
+            }}
+            title="click to rename"
+          >
+            {(desired.out2_label as string) || "Output 2"}
+          </span>
           <span className={`relative w-11 h-6 rounded-full transition-colors flex items-center px-0.5 ${
             led2 ? "bg-brass justify-end shadow-[0_0_14px_rgba(255,255,255,.35)]" : "bg-line justify-start"
           }`}>
@@ -490,7 +533,17 @@ function ControlsCard({ device, onChange, publish, instant }: {
         </button>
 
         <button onClick={() => updateDesired({ led3: !led3 })} className="flex items-center gap-3 group">
-          <span className="text-xs font-mono uppercase tracking-widest text-mute group-hover:text-ink">Output 3</span>
+          <span
+            className="text-xs font-mono uppercase tracking-widest text-mute group-hover:text-ink"
+            onClick={(e) => {
+              e.stopPropagation();
+              const next = window.prompt("Name this output:", (desired.out3_label as string) || "Output 3");
+              if (next !== null) updateDesired({ out3_label: next.trim() || "Output 3" });
+            }}
+            title="click to rename"
+          >
+            {(desired.out3_label as string) || "Output 3"}
+          </span>
           <span className={`relative w-11 h-6 rounded-full transition-colors flex items-center px-0.5 ${
             led3 ? "bg-brass justify-end shadow-[0_0_14px_rgba(255,255,255,.35)]" : "bg-line justify-start"
           }`}>
