@@ -117,8 +117,8 @@ export default function Landing() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 1, ease: easeOut }}
           >
-            <Link to="/login" className="btn-brass font-medium rounded-xl px-7 py-3">
-              Get started
+            <Link to="/preorder" className="btn-brass font-medium rounded-xl px-7 py-3">
+              Pre-order — R0 today
             </Link>
             <a
               href="#hardware"
@@ -322,11 +322,11 @@ export default function Landing() {
               <p className="text-faint text-xs">Watches the geyser, freezer, gate, leaks, Eskom — and the people you love.</p>
             </div>
           </div>
-          <Link to="/login" className="btn-brass font-medium rounded-xl px-8 py-3 inline-block">
-            Get started
+          <Link to="/preorder" className="btn-brass font-medium rounded-xl px-8 py-3 inline-block">
+            Reserve your build slot — R0 today
           </Link>
           <p className="text-faint text-xs mt-6 font-mono">
-            in development · built in South Africa, for South Africa
+            pre-order phase · hand-built in South Africa, for South Africa
           </p>
         </Reveal>
       </section>

@@ -4,6 +4,9 @@ import {
 } from "react-router-dom";
 import { AnimatePresence, MotionConfig, motion } from "framer-motion";
 import type { Session } from "@supabase/supabase-js";
+import {
+  Bell, BookOpen, LayoutGrid, LogOut, Package, QrCode, ShieldCheck,
+} from "lucide-react";
 import { configured, supabase } from "./lib/supabase";
 import { easeOut } from "./components/motion";
 import Login from "./pages/Login";
@@ -14,41 +17,184 @@ import Claim from "./pages/Claim";
 import Setup from "./pages/Setup";
 import Notifications from "./pages/Notifications";
 import Admin from "./pages/Admin";
-import { Bell } from "lucide-react";
+import Preorder from "./pages/Preorder";
+import Plans from "./pages/Plans";
+import Orders from "./pages/Orders";
 
-function Page({ children }: { children: React.ReactNode }) {
+function Brand({ compact = false }: { compact?: boolean }) {
   return (
-    <div className="mx-auto w-full max-w-5xl px-4 sm:px-6 py-6 sm:py-10">{children}</div>
-  );
-}
-
-function NavItem({ to, label }: { to: string; label: string }) {
-  const location = useLocation();
-  const active =
-    to === "/" ? location.pathname === "/" : location.pathname.startsWith(to);
-  return (
-    <Link
-      to={to}
-      className={`relative py-1 transition-colors ${
-        active ? "text-ink" : "text-mute hover:text-ink"
-      }`}
-    >
-      {label}
-      {active && (
-        <motion.span
-          layoutId="nav-underline"
-          className="absolute left-0 right-0 -bottom-[17px] h-px bg-ink shadow-[0_0_8px_rgba(255,255,255,.8)]"
-        />
-      )}
+    <Link to="/" className="font-display tracking-widest text-sm inline-flex items-center gap-2.5">
+      <motion.span
+        className="w-2 h-2 rounded-full bg-white"
+        animate={{ boxShadow: [
+          "0 0 6px rgba(255,255,255,.5)",
+          "0 0 14px rgba(255,255,255,.95)",
+          "0 0 6px rgba(255,255,255,.5)",
+        ] }}
+        transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
+      />
+      {!compact && "FULNEX"}
     </Link>
   );
 }
 
+/* ------------------------------------------------------------- */
+/* public layout: slim header, full-width pages                   */
+/* ------------------------------------------------------------- */
+function PublicShell({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="min-h-screen flex flex-col">
+      <header className="border-b border-line sticky top-0 z-20 bg-ground/85 backdrop-blur">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 h-14 flex items-center justify-between">
+          <Brand />
+          <nav className="flex items-center gap-3 sm:gap-6 text-sm">
+            <Link to="/plans" className="text-mute hover:text-ink transition-colors hidden sm:block">Plans</Link>
+            <Link to="/setup" className="text-mute hover:text-ink transition-colors hidden sm:block">Setup</Link>
+            <Link to="/preorder" className="btn-brass font-medium rounded-lg px-4 py-1.5">
+              Pre-order
+            </Link>
+            <Link
+              to="/login"
+              className="border border-line rounded-lg px-4 py-1.5 text-mute hover:text-ink hover:border-brassdim transition-colors"
+            >
+              Sign in
+            </Link>
+          </nav>
+        </div>
+      </header>
+      <main className="flex-1 w-full">{children}</main>
+      <footer className="border-t border-line">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 py-5 flex items-center justify-between text-xs font-mono text-faint tracking-wide">
+          <span>FULNEX · your things, watched</span>
+          <span>pre-order phase</span>
+        </div>
+      </footer>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------- */
+/* app layout: sidebar (desktop) + bottom tabs (mobile)           */
+/* ------------------------------------------------------------- */
+type NavDef = { to: string; label: string; icon: React.ComponentType<{ size?: number | string; strokeWidth?: number | string }> };
+
+function SideItem({ n, active }: { n: NavDef; active: boolean }) {
+  const Icon = n.icon;
+  return (
+    <Link
+      to={n.to}
+      className={`relative flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm transition-colors ${
+        active ? "text-ink" : "text-mute hover:text-ink"
+      }`}
+    >
+      {active && (
+        <motion.span
+          layoutId="side-pill"
+          className="absolute inset-0 rounded-xl bg-panel border border-line"
+          transition={{ type: "spring", stiffness: 500, damping: 38 }}
+        />
+      )}
+      <span className="relative z-10 flex items-center gap-3">
+        <Icon size={16} strokeWidth={1.75} />
+        {n.label}
+      </span>
+    </Link>
+  );
+}
+
+function AppShell({ children, isAdmin, tier }: {
+  children: React.ReactNode; isAdmin: boolean; tier: string;
+}) {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const nav: NavDef[] = [
+    { to: "/", label: "Monitor", icon: LayoutGrid },
+    { to: "/orders", label: "My orders", icon: Package },
+    { to: "/claim", label: "Claim", icon: QrCode },
+    { to: "/notifications", label: "Alerts", icon: Bell },
+    { to: "/setup", label: "Setup", icon: BookOpen },
+    ...(isAdmin ? [{ to: "/admin", label: "Admin", icon: ShieldCheck }] : []),
+  ];
+  const isActive = (to: string) =>
+    to === "/" ? location.pathname === "/" || location.pathname.startsWith("/device") : location.pathname.startsWith(to);
+
+  return (
+    <div className="min-h-screen lg:flex">
+      {/* sidebar — desktop */}
+      <aside className="hidden lg:flex flex-col w-60 shrink-0 border-r border-line sticky top-0 h-screen px-4 py-5">
+        <div className="px-3.5 mb-8"><Brand /></div>
+        <nav className="flex flex-col gap-1">
+          {nav.map((n) => <SideItem key={n.to} n={n} active={isActive(n.to)} />)}
+        </nav>
+        <div className="mt-auto space-y-3">
+          <div className="px-3.5 flex items-center justify-between">
+            <span className={`text-[10px] font-mono uppercase tracking-widest rounded-full border px-2.5 py-1 ${
+              tier === "founder" ? "text-brass border-brassdim"
+              : tier === "plus" ? "text-ok border-ok/40"
+              : "text-mute border-line"
+            }`}>
+              {tier}
+            </span>
+            <button
+              title="Sign out"
+              className="text-faint hover:text-ink transition-colors"
+              onClick={async () => { await supabase.auth.signOut(); navigate("/login"); }}
+            >
+              <LogOut size={15} strokeWidth={1.75} />
+            </button>
+          </div>
+          <div className="px-3.5 text-[10px] font-mono text-faint tracking-wide">
+            your things, watched
+          </div>
+        </div>
+      </aside>
+
+      {/* mobile top bar */}
+      <div className="lg:hidden sticky top-0 z-20 bg-ground/85 backdrop-blur border-b border-line">
+        <div className="px-4 h-12 flex items-center justify-between">
+          <Brand />
+          <button
+            className="text-faint hover:text-ink text-xs font-mono"
+            onClick={async () => { await supabase.auth.signOut(); navigate("/login"); }}
+          >
+            sign out
+          </button>
+        </div>
+      </div>
+
+      {/* main */}
+      <div className="flex-1 min-w-0 pb-20 lg:pb-0">
+        <main className="mx-auto w-full max-w-6xl px-4 sm:px-6 py-6 sm:py-8">{children}</main>
+      </div>
+
+      {/* bottom tabs — mobile */}
+      <nav className="lg:hidden fixed bottom-0 inset-x-0 z-20 bg-ground/92 backdrop-blur border-t border-line">
+        <div className="grid auto-cols-fr grid-flow-col">
+          {nav.map((n) => {
+            const Icon = n.icon;
+            const active = isActive(n.to);
+            return (
+              <Link key={n.to} to={n.to}
+                className={`flex flex-col items-center gap-1 py-2.5 text-[10px] font-mono uppercase tracking-wider ${
+                  active ? "text-ink" : "text-faint"
+                }`}>
+                <Icon size={17} strokeWidth={active ? 2 : 1.6} />
+                {n.label}
+              </Link>
+            );
+          })}
+        </div>
+      </nav>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------- */
 export default function App() {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
-  const navigate = useNavigate();
+  const [tier, setTier] = useState("free");
   const location = useLocation();
 
   useEffect(() => {
@@ -61,13 +207,16 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (!session) { setIsAdmin(false); return; }
+    if (!session) { setIsAdmin(false); setTier("free"); return; }
     supabase
       .from("profiles")
-      .select("is_admin")
+      .select("is_admin, tier")
       .eq("id", session.user.id)
       .maybeSingle()
-      .then(({ data }) => setIsAdmin(data?.is_admin === true));
+      .then(({ data }) => {
+        setIsAdmin(data?.is_admin === true);
+        setTier(data?.tier ?? "free");
+      });
   }, [session]);
 
   if (!configured) {
@@ -94,92 +243,45 @@ export default function App() {
     );
   }
 
+  const page = (
+    <AnimatePresence mode="wait">
+      <motion.div
+        key={location.pathname}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -8 }}
+        transition={{ duration: 0.35, ease: easeOut }}
+      >
+        <Routes location={location}>
+          <Route
+            path="/login"
+            element={session
+              ? <Navigate to={new URLSearchParams(location.search).get("next") ?? "/"} />
+              : <Login />}
+          />
+          <Route path="/" element={session ? <Devices /> : <Landing />} />
+          <Route path="/preorder" element={<Preorder />} />
+          <Route path="/plans" element={<Plans />} />
+          <Route path="/setup" element={<Setup />} />
+          <Route path="/device/:id" element={session ? <DevicePage /> : <Navigate to="/login" />} />
+          <Route path="/claim" element={<Claim />} />
+          <Route path="/claim/:serial" element={<Claim />} />
+          <Route path="/orders" element={session ? <Orders /> : <Navigate to="/login" />} />
+          <Route path="/notifications" element={session ? <Notifications /> : <Navigate to="/login" />} />
+          <Route path="/admin" element={session ? <Admin /> : <Navigate to="/login" />} />
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
+      </motion.div>
+    </AnimatePresence>
+  );
+
   return (
     <MotionConfig reducedMotion="user">
-      <div className="min-h-screen flex flex-col">
-        <header className="border-b border-line sticky top-0 z-10 bg-ground/85 backdrop-blur">
-          <div className="mx-auto max-w-5xl px-4 sm:px-6 h-14 flex items-center justify-between">
-            <Link to="/" className="font-display tracking-widest text-sm inline-flex items-center gap-2.5">
-              <motion.span
-                className="w-2 h-2 rounded-full bg-white"
-                animate={{ boxShadow: [
-                  "0 0 6px rgba(255,255,255,.5)",
-                  "0 0 14px rgba(255,255,255,.95)",
-                  "0 0 6px rgba(255,255,255,.5)",
-                ] }}
-                transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
-              />
-              FULNEX
-            </Link>
-            {!session && (
-              <nav className="flex items-center gap-4 sm:gap-6 text-sm">
-                <NavItem to="/setup" label="Device setup" />
-                <Link
-                  to="/login"
-                  className="border border-line rounded-lg px-4 py-1.5 text-mute hover:text-ink hover:border-brassdim transition-colors"
-                >
-                  Sign in
-                </Link>
-              </nav>
-            )}
-            {session && (
-              <nav className="flex items-center gap-4 sm:gap-6 text-sm">
-                <NavItem to="/" label="Monitor" />
-                <NavItem to="/setup" label="Setup" />
-                <NavItem to="/claim" label="Claim" />
-                {isAdmin && <NavItem to="/admin" label="Admin" />}
-                <Link
-                  to="/notifications"
-                  title="Notifications"
-                  className={`relative py-1 transition-colors ${
-                    location.pathname.startsWith("/notifications") ? "text-ink" : "text-mute hover:text-ink"
-                  }`}
-                >
-                  <Bell size={16} strokeWidth={1.75} />
-                </Link>
-                <button
-                  className="text-faint hover:text-ink transition-colors"
-                  onClick={async () => {
-                    await supabase.auth.signOut();
-                    navigate("/login");
-                  }}
-                >
-                  Sign out
-                </button>
-              </nav>
-            )}
-          </div>
-        </header>
-        <main className="flex-1 w-full">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={location.pathname}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.35, ease: easeOut }}
-            >
-              <Routes location={location}>
-                <Route path="/login" element={session ? <Navigate to="/" /> : <Page><Login /></Page>} />
-                <Route path="/" element={session ? <Page><Devices /></Page> : <Landing />} />
-                <Route path="/device/:id" element={session ? <Page><DevicePage /></Page> : <Navigate to="/login" />} />
-                <Route path="/claim" element={session ? <Page><Claim /></Page> : <Navigate to="/login" />} />
-                <Route path="/claim/:serial" element={session ? <Page><Claim /></Page> : <Navigate to="/login" />} />
-                <Route path="/setup" element={<Page><Setup /></Page>} />
-                <Route path="/notifications" element={session ? <Page><Notifications /></Page> : <Navigate to="/login" />} />
-                <Route path="/admin" element={session ? <Page><Admin /></Page> : <Navigate to="/login" />} />
-                <Route path="*" element={<Navigate to="/" />} />
-              </Routes>
-            </motion.div>
-          </AnimatePresence>
-        </main>
-        <footer className="border-t border-line">
-          <div className="mx-auto max-w-5xl px-4 sm:px-6 py-5 flex items-center justify-between text-xs font-mono text-faint tracking-wide">
-            <span>FULNEX · your things, watched</span>
-            <span>alpha</span>
-          </div>
-        </footer>
-      </div>
+      {session ? (
+        <AppShell isAdmin={isAdmin} tier={tier}>{page}</AppShell>
+      ) : (
+        <PublicShell>{page}</PublicShell>
+      )}
     </MotionConfig>
   );
 }

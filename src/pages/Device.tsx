@@ -2,9 +2,10 @@ import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import mqtt, { MqttClient } from "mqtt";
 import {
-  Area, AreaChart, CartesianGrid, Line, LineChart,
+  CartesianGrid, Line, LineChart,
   ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from "recharts";
+import { CoachMarks } from "../components/hints";
 import { motion } from "framer-motion";
 import {
   Cpu, DoorOpen, Droplets, Gauge, Radar, Thermometer, Waves,
@@ -43,7 +44,8 @@ export default function DevicePage() {
   const [name, setName] = useState("");
   const [uid, setUid] = useState("");
   const [range, setRange] = useState<RangeKey>("24h");
-  const [selPort, setSelPort] = useState<number | null>(null);
+  // null = default visibility (senses on, output echoes off)
+  const [hiddenState, setHiddenState] = useState<Set<number> | null>(null);
   const mqttRef = useRef<MqttClient | null>(null);
   const [instant, setInstant] = useState(false);
 
@@ -184,11 +186,48 @@ export default function DevicePage() {
   const sortedPorts = [...portNos].sort(
     (a, b) => ((a < 20 ? 0 : 1) - (b < 20 ? 0 : 1)) || a - b,
   );
-  const activePort =
-    selPort !== null && portNos.includes(selPort) ? selPort : sortedPorts[0] ?? null;
+  // one chart, one colour per port, chips to switch series on/off
+  const PALETTE = ["#e4e3dd", "#d8a35a", "#7aa2c9", "#6fbf8f", "#c98a7a", "#9a8ac9", "#5c9a94", "#b8b078"];
+  const portColor = (p: number) => PALETTE[sortedPorts.indexOf(p) % PALETTE.length];
+  const hidden = hiddenState ?? new Set(sortedPorts.filter((p) => p >= 20));
+  const toggleSeries = (p: number) => {
+    const next = new Set(hidden);
+    if (next.has(p)) next.delete(p); else next.add(p);
+    setHiddenState(next);
+  };
+  const visiblePorts = sortedPorts.filter((p) => !hidden.has(p));
+
+  const byTime = new Map<number, Record<string, number>>();
+  for (const r of readings) {
+    const bucket = Math.round(new Date(r.ts).getTime() / 60000) * 60000;
+    const row = byTime.get(bucket) ?? {};
+    row[`p${r.port_no}`] = r.value;
+    byTime.set(bucket, row);
+  }
+  const chartData = [...byTime.entries()]
+    .sort((a, b) => a[0] - b[0])
+    .map(([t, vals]) => ({
+      time: new Date(t).toLocaleString([], {
+        ...(range === "7d" ? { weekday: "short" as const } : {}),
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+      ...vals,
+    }));
 
   return (
     <div className="space-y-6">
+      {portNos.length > 0 && (
+        <CoachMarks
+          id="device"
+          steps={[
+            { key: "tiles", text: "Every sense is a tile. Tap one to show or hide its line on the chart below." },
+            { key: "chart", text: "Everything on one chart — one colour per sense. The chips switch lines on and off." },
+            { key: "controls", text: "Real switches. Flip one and the device answers back with what it actually did." },
+            { key: "autopilot", text: "Set targets once — the device holds them on its own hardware, even with the internet down." },
+          ]}
+        />
+      )}
       <FadeUp className="card p-5 sm:p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
@@ -287,30 +326,40 @@ export default function DevicePage() {
 
       {portNos.length > 0 && (
         <Stagger className="grid gap-3" delay={0.1}>
-          <div className="grid gap-3 grid-cols-2 sm:grid-cols-3">
+          <div className="grid gap-3 grid-cols-2 sm:grid-cols-3" data-hint="tiles">
             {sortedPorts.map((portNo) => {
               const port = ports.find((p) => p.port_no === portNo);
               const series = readings.filter((r) => r.port_no === portNo);
               const latest = series[series.length - 1];
-              const selected = portNo === activePort;
+              const shown = !hidden.has(portNo);
               return (
                 <StaggerItem key={portNo}>
                   <button
-                    onClick={() => setSelPort(portNo)}
-                    className={`card w-full text-left px-4 py-3.5 cursor-pointer transition-shadow ${
-                      selected ? "ring-1 ring-brassdim shadow-[0_0_30px_-12px_rgba(255,255,255,.25)]" : ""
+                    onClick={() => toggleSeries(portNo)}
+                    className={`card w-full text-left px-4 py-3.5 cursor-pointer transition-all ${
+                      shown ? "" : "opacity-60"
                     }`}
-                    title="view history"
+                    title={shown ? "hide on chart" : "show on chart"}
                   >
                     <div className="flex items-start gap-3">
                       <span className="icon-chip shrink-0"><KindIcon kind={port?.kind} /></span>
-                      <div className="min-w-0">
-                        <span
-                          onClick={(e) => { e.stopPropagation(); renamePort(portNo); }}
-                          className="block text-[10px] font-mono uppercase tracking-widest text-mute mb-0.5 truncate hover:text-ink"
-                          title="click to rename"
-                        >
-                          {portName(portNo)}
+                      <div className="min-w-0 flex-1">
+                        <span className="flex items-center gap-1.5 mb-0.5">
+                          <motion.span
+                            layout
+                            className="w-1.5 h-1.5 rounded-full shrink-0"
+                            animate={{
+                              backgroundColor: shown ? portColor(portNo) : "#3a3d42",
+                              boxShadow: shown ? `0 0 8px ${portColor(portNo)}66` : "none",
+                            }}
+                          />
+                          <span
+                            onClick={(e) => { e.stopPropagation(); renamePort(portNo); }}
+                            className="block text-[10px] font-mono uppercase tracking-widest text-mute truncate hover:text-ink"
+                            title="click to rename"
+                          >
+                            {portName(portNo)}
+                          </span>
                         </span>
                         <div className="text-xl font-semibold tabular-nums leading-tight">
                           {latest ? formatReading(port?.kind ?? null, latest.value, portNo) : "–"}
@@ -354,112 +403,91 @@ export default function DevicePage() {
             Need the firmware or wiring? <a href="/setup" className="text-brass hover:underline">Device setup</a>
           </p>
         </div>
-      ) : activePort !== null ? (
-        (() => {
-          const portNo = activePort;
-          const port = ports.find((p) => p.port_no === portNo);
-          const isContact = port?.kind === "contact";
-          const isOutputEcho = portNo >= 21 && portNo <= 23;
-          const [hiLabel, loLabel] = isOutputEcho ? ["ON", "OFF"] : ["CLOSED", "OPEN"];
-          const series = readings
-            .filter((r) => r.port_no === portNo)
-            .map((r) => ({
-              time: new Date(r.ts).toLocaleString([], {
-                ...(range === "7d" ? { weekday: "short" as const } : {}),
-                hour: "2-digit",
-                minute: "2-digit",
-              }),
-              value: r.value,
-            }));
-          const latest = series[series.length - 1];
-          return (
-            <FadeUp className="card p-4 sm:p-5">
-              <div className="flex flex-wrap items-center justify-between gap-3 mb-1">
-                <h2 className="font-medium flex items-center gap-2.5">
-                  <span className="text-brass"><KindIcon kind={port?.kind} size={15} /></span>
-                  <button onClick={() => renamePort(portNo)} className="hover:text-brass transition-colors" title="click to rename">
-                    {portName(portNo)}
-                  </button>
-                  <span className="text-faint text-xs font-mono ml-1">history</span>
-                </h2>
-                <span className="flex items-center gap-3">
-                  {port?.kind === "analog" && latest && (
-                    <span
-                      className="w-7 h-7 rounded-lg border border-line inline-block"
-                      title="live colour — driven by the dial"
-                      style={{
-                        background: `hsl(${Math.round((latest.value / 100) * 300)} 75% 55%)`,
-                        boxShadow: `0 0 14px hsl(${Math.round((latest.value / 100) * 300)} 75% 55% / .45)`,
-                      }}
+      ) : (
+        <FadeUp className="card p-4 sm:p-5" data-hint="chart">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+            <h2 className="font-medium">History</h2>
+            <div className="flex items-center gap-1.5">
+              {RANGES.map((r) => (
+                <button
+                  key={r.key}
+                  onClick={() => setRange(r.key)}
+                  className={`text-xs font-mono rounded-lg px-3 py-1 border transition-colors ${
+                    range === r.key
+                      ? "border-brass text-brass"
+                      : "border-line text-faint hover:text-mute hover:border-brassdim"
+                  }`}
+                >
+                  {r.key}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-1.5 mb-4">
+            {sortedPorts.map((p) => {
+              const shown = !hidden.has(p);
+              return (
+                <button
+                  key={p}
+                  onClick={() => toggleSeries(p)}
+                  className={`inline-flex items-center gap-1.5 text-[11px] font-mono rounded-full border px-2.5 py-1 transition-all ${
+                    shown ? "border-line text-ink" : "border-line/50 text-faint"
+                  }`}
+                >
+                  <span
+                    className="w-2 h-2 rounded-full transition-colors"
+                    style={{ background: shown ? portColor(p) : "#3a3d42" }}
+                  />
+                  <span className={shown ? "" : "line-through"}>{portName(p)}</span>
+                </button>
+              );
+            })}
+          </div>
+          <div className="h-64 sm:h-72">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={chartData}>
+                <CartesianGrid stroke="#1e2125" vertical={false} />
+                <XAxis dataKey="time" stroke="#5c6067" fontSize={11} tickLine={false} axisLine={false} minTickGap={50} />
+                <YAxis stroke="#5c6067" fontSize={11} tickLine={false} axisLine={false} width={44} domain={["auto", "auto"]} />
+                <Tooltip
+                  contentStyle={{ background: "#1a1d21", border: "1px solid #26292e", borderRadius: 10, fontSize: 12 }}
+                  labelStyle={{ color: "#8f939a" }}
+                  formatter={(v, key) => {
+                    const portNo = Number(String(key).replace("p", ""));
+                    const kind = ports.find((x) => x.port_no === portNo)?.kind ?? null;
+                    return [formatReading(kind, Number(v), portNo), portName(portNo)];
+                  }}
+                />
+                {visiblePorts.map((p) => {
+                  const kind = ports.find((x) => x.port_no === p)?.kind;
+                  return (
+                    <Line
+                      key={p}
+                      type={kind === "contact" ? "stepAfter" : "monotone"}
+                      dataKey={`p${p}`}
+                      stroke={portColor(p)}
+                      strokeWidth={p === visiblePorts[0] ? 2 : 1.6}
+                      dot={false}
+                      activeDot={{ r: 3.5 }}
+                      connectNulls
                     />
-                  )}
-                  {latest && (
-                    <span className="font-mono text-brass text-lg tabular-nums">
-                      {formatReading(port?.kind ?? null, latest.value, portNo)}
-                    </span>
-                  )}
-                </span>
-              </div>
-              <div className="flex items-center gap-1.5 mb-3">
-                {RANGES.map((r) => (
-                  <button
-                    key={r.key}
-                    onClick={() => setRange(r.key)}
-                    className={`text-xs font-mono rounded-lg px-3 py-1 border transition-colors ${
-                      range === r.key
-                        ? "border-brass text-brass"
-                        : "border-line text-faint hover:text-mute hover:border-brassdim"
-                    }`}
-                  >
-                    {r.key}
-                  </button>
-                ))}
-              </div>
-              <div className="h-60">
-                <ResponsiveContainer width="100%" height="100%">
-                  {isContact ? (
-                    <LineChart data={series}>
-                      <CartesianGrid stroke="#1e2125" vertical={false} />
-                      <XAxis dataKey="time" stroke="#5c6067" fontSize={11} tickLine={false} axisLine={false} minTickGap={50} />
-                      <YAxis stroke="#5c6067" fontSize={11} tickLine={false} axisLine={false} width={40} domain={[0, 1]} ticks={[0, 1]} tickFormatter={(v: number) => (v ? hiLabel.toLowerCase() : loLabel.toLowerCase())} />
-                      <Tooltip
-                        contentStyle={{ background: "#1a1d21", border: "1px solid #26292e", borderRadius: 10, fontSize: 12 }}
-                        labelStyle={{ color: "#8f939a" }}
-                        formatter={(v) => [Number(v) >= 0.5 ? hiLabel : loLabel, ""]}
-                      />
-                      <Line type="stepAfter" dataKey="value" stroke="#e4e3dd" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
-                    </LineChart>
-                  ) : (
-                    <AreaChart data={series}>
-                      <defs>
-                        <linearGradient id="grad-active" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#e4e3dd" stopOpacity={0.25} />
-                          <stop offset="100%" stopColor="#e4e3dd" stopOpacity={0} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid stroke="#1e2125" vertical={false} />
-                      <XAxis dataKey="time" stroke="#5c6067" fontSize={11} tickLine={false} axisLine={false} minTickGap={50} />
-                      <YAxis stroke="#5c6067" fontSize={11} tickLine={false} axisLine={false} width={44} domain={["auto", "auto"]} />
-                      <Tooltip
-                        contentStyle={{ background: "#1a1d21", border: "1px solid #26292e", borderRadius: 10, fontSize: 12 }}
-                        labelStyle={{ color: "#8f939a" }}
-                        formatter={(v) => [formatReading(port?.kind ?? null, Number(v)), ""]}
-                      />
-                      <Area type="monotone" dataKey="value" stroke="#e4e3dd" strokeWidth={2} fill="url(#grad-active)" dot={false} activeDot={{ r: 4 }} />
-                    </AreaChart>
-                  )}
-                </ResponsiveContainer>
-              </div>
-            </FadeUp>
-          );
-        })()
-      ) : null}
+                  );
+                })}
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </FadeUp>
+      )}
 
         </div>
 
         <div className="space-y-4 sm:space-y-6">
-          <ControlsCard device={device} onChange={load} publish={publishInstant} instant={instant} />
-          <AutopilotCard device={device} onChange={load} publish={publishInstant} readings={readings} />
+          <div data-hint="controls">
+            <ControlsCard device={device} onChange={load} publish={publishInstant} instant={instant} />
+          </div>
+          <div data-hint="autopilot">
+            <AutopilotCard device={device} onChange={load} publish={publishInstant} readings={readings} />
+          </div>
           <RulesCard deviceId={device.id} rules={rules} portNos={portNos} onChange={load} />
           {events.length > 0 && (
             <div className="card p-5">

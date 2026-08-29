@@ -4,6 +4,15 @@ import { motion } from "framer-motion";
 import { Activity, Clock3, Wifi } from "lucide-react";
 import { Device, isOnline, supabase, timeAgo } from "../lib/supabase";
 import { AnimatedNumber, LiveDot, Stagger, StaggerItem } from "../components/motion";
+import { CoachMarks } from "../components/hints";
+
+const PRODUCT_LABEL: Record<string, string> = {
+  "FLX-HUB-1": "Fulnex Hub",
+  "BILTONG-KAS": "Biltong Cabinet",
+  "BILTONG-KAS-F": "Biltong Cabinet",
+  "GROW-CAB": "Grow Cabinet",
+  "GROW-CAB-F": "Grow Cabinet",
+};
 
 type SparkPoint = { ts: number; value: number };
 
@@ -68,7 +77,7 @@ export default function Devices() {
       const [dev, rdg, cnt, alr] = await Promise.all([
         supabase
           .from("devices")
-          .select("id, serial, name, role, owner, fw_version, last_seen, wifi_rssi, battery_pct, led_on")
+          .select("id, serial, name, role, owner, product, fw_version, last_seen, wifi_rssi, battery_pct, led_on")
           .order("created_at", { ascending: true }),
         supabase
           .from("readings")
@@ -159,6 +168,13 @@ export default function Devices() {
 
   return (
     <div>
+      <CoachMarks
+        id="monitor"
+        steps={[
+          { key: "stats", text: "Your whole fleet at a glance — online count, data flow, last heartbeat." },
+          { key: "devices", text: "Each card is one device, live. Tap it to open its control room." },
+        ]}
+      />
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl sm:text-[28px] font-semibold tracking-tight">Monitor</h1>
         <span className="inline-flex items-center gap-2 text-[11px] font-mono text-faint border border-line rounded-full px-3 py-1">
@@ -166,7 +182,7 @@ export default function Devices() {
           live · refreshes every 30 s
         </span>
       </div>
-      <Stagger className="grid grid-cols-1 min-[520px]:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
+      <Stagger className="grid grid-cols-1 min-[520px]:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8" data-hint="stats">
         <StaggerItem className="card px-5 py-4 flex items-center gap-4">
           <span className="icon-chip"><Wifi size={17} strokeWidth={1.75} /></span>
           <div>
@@ -195,7 +211,7 @@ export default function Devices() {
         </StaggerItem>
       </Stagger>
 
-      <Stagger className="grid gap-3 sm:gap-4 sm:grid-cols-2" delay={0.15}>
+      <Stagger className="grid gap-3 sm:gap-4 sm:grid-cols-2" delay={0.15} data-hint="devices">
         {devices.map((d) => {
           const on = isOnline(d);
           const shared = uid && d.owner && d.owner !== uid;
@@ -225,7 +241,8 @@ export default function Devices() {
                   </span>
                 </div>
                 <div className="text-faint text-xs font-mono mb-4">
-                  {d.serial} · {d.role}
+                  {d.serial}
+                  {d.product && PRODUCT_LABEL[d.product] ? ` · ${PRODUCT_LABEL[d.product]}` : ` · ${d.role}`}
                   {d.fw_version ? ` · fw ${d.fw_version}` : ""}
                 </div>
                 <div className="flex items-end justify-between gap-4">

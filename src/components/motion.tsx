@@ -6,14 +6,15 @@ import {
 export const easeOut = [0.22, 1, 0.36, 1] as const;
 
 export function FadeUp({
-  children, delay = 0, className,
-}: { children: ReactNode; delay?: number; className?: string }) {
+  children, delay = 0, className, ...rest
+}: { children: ReactNode; delay?: number; className?: string } & Record<string, unknown>) {
   return (
     <motion.div
       className={className}
       initial={{ opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.55, delay, ease: easeOut }}
+      {...rest}
     >
       {children}
     </motion.div>
@@ -21,8 +22,8 @@ export function FadeUp({
 }
 
 export function Stagger({
-  children, className, delay = 0,
-}: { children: ReactNode; className?: string; delay?: number }) {
+  children, className, delay = 0, ...rest
+}: { children: ReactNode; className?: string; delay?: number } & Record<string, unknown>) {
   return (
     <motion.div
       className={className}
@@ -32,6 +33,7 @@ export function Stagger({
         hidden: {},
         show: { transition: { staggerChildren: 0.07, delayChildren: delay } },
       }}
+      {...rest}
     >
       {children}
     </motion.div>
