@@ -355,6 +355,94 @@ export default function DevicePage() {
       <RulesCard deviceId={device.id} rules={rules} portNos={portNos} onChange={load} />
 
       {uid && device.owner === uid && <ShareCard deviceId={device.id} />}
+
+      <OtaCard device={device} publish={publishInstant} onChange={load} />
+    </div>
+  );
+}
+
+function OtaCard({ device, publish, onChange }: {
+  device: Device;
+  publish: (o: Record<string, unknown>) => void;
+  onChange: () => void;
+}) {
+  const [version, setVersion] = useState("");
+  const [file, setFile] = useState<File | null>(null);
+  const [status, setStatus] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const desired = (device.desired ?? {}) as Record<string, unknown>;
+  const pending =
+    typeof desired.fw_ver === "string" && desired.fw_ver !== device.fw_version
+      ? (desired.fw_ver as string)
+      : null;
+
+  async function pushUpdate(e: FormEvent) {
+    e.preventDefault();
+    if (!file || !version) return;
+    setBusy(true);
+    setStatus("uploading firmware…");
+    const path = `fulnex_hub-${version}.bin`;
+    const { error } = await supabase.storage
+      .from("firmware")
+      .upload(path, file, { upsert: true, contentType: "application/octet-stream" });
+    if (error) {
+      setStatus(`upload failed: ${error.message}`);
+      setBusy(false);
+      return;
+    }
+    const { data } = supabase.storage.from("firmware").getPublicUrl(path);
+    const url = data.publicUrl;
+    setStatus("commanding the device…");
+    await supabase.rpc("patch_desired", {
+      p_device_id: device.id,
+      p_patch: { fw_ver: version, fw_url: url },
+    });
+    publish({ fw_ver: version, fw_url: url });
+    setStatus(`pushed ${version} — the device downloads, flashes itself, and reboots. Watch fw change in the header.`);
+    setBusy(false);
+    setVersion("");
+    setFile(null);
+    onChange();
+  }
+
+  return (
+    <div className="card p-5">
+      <div className="flex items-baseline justify-between mb-1">
+        <h2 className="font-medium">Firmware over the air</h2>
+        <span className="text-faint text-[11px] font-mono">
+          running {device.fw_version ?? "unknown"}
+          {pending ? ` · pushing ${pending}…` : ""}
+        </span>
+      </div>
+      <p className="text-mute text-sm mb-4">
+        Arduino IDE → Sketch → Export Compiled Binary, then push the .bin here.
+        The device fetches it, flashes itself, and reboots into the new version.
+      </p>
+      <form onSubmit={pushUpdate} className="flex flex-wrap items-center gap-3">
+        <input
+          required
+          placeholder="1.1.1"
+          value={version}
+          onChange={(e) => setVersion(e.target.value.trim())}
+          className="w-24 bg-ground border border-line rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:border-brass"
+        />
+        <label className="border border-line rounded-lg px-4 py-2 text-sm text-mute hover:border-brassdim cursor-pointer">
+          {file ? file.name : "choose .bin"}
+          <input
+            type="file"
+            accept=".bin"
+            className="hidden"
+            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+          />
+        </label>
+        <button
+          disabled={busy || !file || !version}
+          className="btn-brass font-medium rounded-lg px-5 py-2 text-sm disabled:opacity-50"
+        >
+          {busy ? "…" : "Push update"}
+        </button>
+      </form>
+      {status && <p className="text-mute text-sm mt-3">{status}</p>}
     </div>
   );
 }
@@ -376,10 +464,8 @@ function ControlsCard({ device, onChange, publish, instant }: {
 
   async function updateDesired(patch: Record<string, unknown>) {
     publish(patch);                       // instant path, if connected
-    await supabase
-      .from("devices")
-      .update({ desired: { ...desired, ...patch } })
-      .eq("id", device.id);
+    // atomic server-side merge — concurrent dashboards can't clobber
+    await supabase.rpc("patch_desired", { p_device_id: device.id, p_patch: patch });
     onChange();
   }
 
