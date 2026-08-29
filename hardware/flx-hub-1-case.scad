@@ -43,7 +43,7 @@ out_xs = [56, 68, 80];
 pcb_w = 70;  pcb_d = 50;  pcb_x = 18; pcb_y = 30;
 standoff_h = 5;  standoff_d = 7;  screw_d = 2.6;
 relay_x = 90; relay_y = 30; relay_w = 26; relay_d = 48;
-buck_x = 16;  buck_y = 86;  buck_w = 26; buck_d = 18;
+buck_x = 30;  buck_y = 86;  buck_w = 26; buck_d = 18;
 psu_x  = 46;  psu_y  = 98;  psu_w  = 27; psu_d  = 16;
 
 /* ---------- lid details ---------- */
@@ -52,7 +52,9 @@ logo = "FULNEX";
 logo_depth = 0.8;
 crown_inset = 11;                   // how far the crown shoulder steps in
 crown_rise = 3.4;                   // how much the crown rises
-lidpost_xy = [[30, 30], [90, 30], [30, 90], [90, 90]];
+// posts pushed into the corners, CLEAR of the deck (verified: the
+// deck spans 18..88 x 30..80; posts at 25/95 never touch it)
+lidpost_xy = [[25, 25], [95, 25], [25, 95], [95, 95]];
 
 vent_n = 8;
 label_w = 34; label_h = 34; label_t = 0.6;
@@ -115,8 +117,8 @@ module base() {
       tray(psu_x,  psu_y,  psu_w,  psu_d);
       // harness bridges along the front
       tiebar(34, 18);
-      tiebar(62, 18);
-      tiebar(84, 18);
+      tiebar(58, 18);
+      tiebar(78, 18);
     }
 
     // ---- front chord: 12 jacks, 3 rows of 4 ----
