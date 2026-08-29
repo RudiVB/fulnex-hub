@@ -10,7 +10,7 @@ import {
   Cpu, DoorOpen, Droplets, Gauge, Radar, Thermometer, Waves,
 } from "lucide-react";
 import {
-  AlertRule, Device, Port, Reading, defaultPortName, fmtUptime, formatReading, isOnline, supabase, timeAgo,
+  AlertEvent, AlertRule, Device, Port, Reading, defaultPortName, fmtUptime, formatReading, isOnline, supabase, timeAgo,
 } from "../lib/supabase";
 import { FadeUp, LiveDot, Stagger, StaggerItem } from "../components/motion";
 
@@ -39,6 +39,7 @@ export default function DevicePage() {
   const [ports, setPorts] = useState<Port[]>([]);
   const [readings, setReadings] = useState<Reading[]>([]);
   const [rules, setRules] = useState<AlertRule[]>([]);
+  const [events, setEvents] = useState<AlertEvent[]>([]);
   const [name, setName] = useState("");
   const [uid, setUid] = useState("");
   const [range, setRange] = useState<RangeKey>("24h");
@@ -99,7 +100,7 @@ export default function DevicePage() {
   const load = useCallback(async () => {
     if (!id) return;
     const hours = RANGES.find((r) => r.key === range)!.hours;
-    const [dev, prt, rdg, rls] = await Promise.all([
+    const [dev, prt, rdg, rls, evs] = await Promise.all([
       supabase.from("devices").select("*").eq("id", id).maybeSingle(),
       supabase.from("ports").select("*").eq("device_id", id).order("port_no"),
       supabase
@@ -110,6 +111,12 @@ export default function DevicePage() {
         .order("ts", { ascending: true })
         .limit(3000),
       supabase.from("alert_rules").select("*").eq("device_id", id),
+      supabase
+        .from("alert_events")
+        .select("*")
+        .eq("device_id", id)
+        .order("started_at", { ascending: false })
+        .limit(15),
     ]);
     if (dev.data) {
       setDevice(dev.data as Device);
@@ -118,6 +125,7 @@ export default function DevicePage() {
     setPorts((prt.data as Port[]) ?? []);
     setReadings((rdg.data as Reading[]) ?? []);
     setRules((rls.data as AlertRule[]) ?? []);
+    setEvents((evs.data as AlertEvent[]) ?? []);
   }, [id, range]);
 
   useEffect(() => {
@@ -145,6 +153,21 @@ export default function DevicePage() {
   function portName(portNo: number): string {
     const port = ports.find((p) => p.port_no === portNo);
     return port?.label || defaultPortName(portNo);
+  }
+
+  function ruleText(ruleId: number): string {
+    const r = rules.find((x) => x.id === ruleId);
+    if (!r) return "alert";
+    if (r.condition === "offline") return `Offline for ${r.for_minutes} min`;
+    return `${portName(r.port_no)} ${r.condition} ${r.threshold} for ${r.for_minutes} min`;
+  }
+
+  async function ackEvent(eventId: number) {
+    await supabase
+      .from("alert_events")
+      .update({ acknowledged_at: new Date().toISOString() })
+      .eq("id", eventId);
+    load();
   }
 
   if (!device) {
@@ -233,6 +256,31 @@ export default function DevicePage() {
           <button className="text-sm border border-line rounded-lg px-3 hover:border-brassdim">Save</button>
         </form>
       </FadeUp>
+
+      {events.some((e) => !e.resolved_at) && (
+        <FadeUp className="rounded-xl border border-danger/50 bg-danger/10 px-4 py-3 space-y-2">
+          {events.filter((e) => !e.resolved_at).map((e) => (
+            <div key={e.id} className="flex flex-wrap items-center justify-between gap-2 text-sm">
+              <span className="flex items-center gap-2.5">
+                <span className="relative flex w-2 h-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-danger opacity-60" />
+                  <span className="relative inline-flex rounded-full w-2 h-2 bg-danger" />
+                </span>
+                <span className="text-ink font-medium">{ruleText(e.rule_id)}</span>
+                <span className="text-mute font-mono text-xs">since {timeAgo(e.started_at)}</span>
+              </span>
+              {!e.acknowledged_at && (
+                <button
+                  onClick={() => ackEvent(e.id)}
+                  className="text-xs font-mono border border-line rounded-lg px-2.5 py-1 text-mute hover:border-brassdim hover:text-ink"
+                >
+                  acknowledge
+                </button>
+              )}
+            </div>
+          ))}
+        </FadeUp>
+      )}
 
       <div className="grid lg:grid-cols-3 gap-4 sm:gap-6 items-start">
         <div className="lg:col-span-2 space-y-4 sm:space-y-6">
@@ -413,6 +461,31 @@ export default function DevicePage() {
           <ControlsCard device={device} onChange={load} publish={publishInstant} instant={instant} />
           <AutopilotCard device={device} onChange={load} publish={publishInstant} readings={readings} />
           <RulesCard deviceId={device.id} rules={rules} portNos={portNos} onChange={load} />
+          {events.length > 0 && (
+            <div className="card p-5">
+              <h2 className="font-medium mb-4">Alert history</h2>
+              <ul className="space-y-2">
+                {events.map((e) => {
+                  const mins = e.resolved_at
+                    ? Math.max(1, Math.round((new Date(e.resolved_at).getTime() - new Date(e.started_at).getTime()) / 60000))
+                    : null;
+                  return (
+                    <li key={e.id} className="text-sm border border-line rounded-lg px-3 py-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className={e.resolved_at ? "text-mute" : "text-danger"}>
+                          {e.resolved_at ? "✓" : "⚠"} {ruleText(e.rule_id)}
+                        </span>
+                        <span className="text-faint text-[10px] font-mono whitespace-nowrap">{timeAgo(e.started_at)}</span>
+                      </div>
+                      <div className="text-faint text-[11px] font-mono mt-0.5">
+                        {mins !== null ? `resolved after ${mins} min` : "still active"}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
           <OtaCard device={device} publish={publishInstant} onChange={load} />
           {uid && device.owner === uid && <ShareCard deviceId={device.id} />}
         </div>
@@ -803,19 +876,20 @@ function RulesCard(props: {
   onChange: () => void;
 }) {
   const [port, setPort] = useState<number>(props.portNos[0] ?? 1);
-  const [condition, setCondition] = useState<"above" | "below">("above");
+  const [condition, setCondition] = useState<"above" | "below" | "offline">("above");
   const [threshold, setThreshold] = useState("");
   const [minutes, setMinutes] = useState("5");
   const [error, setError] = useState<string | null>(null);
+  const offline = condition === "offline";
 
   async function addRule(e: FormEvent) {
     e.preventDefault();
     setError(null);
     const { error } = await supabase.from("alert_rules").insert({
       device_id: props.deviceId,
-      port_no: port,
+      port_no: offline ? 0 : port,
       condition,
-      threshold: Number(threshold),
+      threshold: offline ? 0 : Number(threshold),
       for_minutes: Number(minutes),
     });
     if (error) setError(error.message);
@@ -838,7 +912,11 @@ function RulesCard(props: {
           {props.rules.map((r) => (
             <li key={r.id} className="flex items-center justify-between text-sm border border-line rounded-lg px-3 py-2">
               <span className="text-mute">
-                Port {r.port_no}: alert when <span className="text-ink">{r.condition} {r.threshold}</span> for {r.for_minutes} min
+                {r.condition === "offline" ? (
+                  <>Alert when <span className="text-ink">offline</span> for {r.for_minutes} min</>
+                ) : (
+                  <>Port {r.port_no}: alert when <span className="text-ink">{r.condition} {r.threshold}</span> for {r.for_minutes} min</>
+                )}
               </span>
               <button onClick={() => removeRule(r.id)} className="text-faint hover:text-danger text-xs">
                 remove
@@ -849,36 +927,41 @@ function RulesCard(props: {
       )}
       <form onSubmit={addRule} className="flex flex-wrap items-end gap-3 text-sm">
         <label className="flex flex-col gap-1">
-          <span className="text-xs font-mono uppercase tracking-widest text-brass">Port</span>
-          <input
-            type="number"
-            value={port}
-            onChange={(e) => setPort(Number(e.target.value))}
-            className="w-20 bg-ground border border-line rounded-lg px-2 py-1.5"
-          />
-        </label>
-        <label className="flex flex-col gap-1">
           <span className="text-xs font-mono uppercase tracking-widest text-brass">When</span>
           <select
             value={condition}
-            onChange={(e) => setCondition(e.target.value as "above" | "below")}
+            onChange={(e) => setCondition(e.target.value as "above" | "below" | "offline")}
             className="bg-ground border border-line rounded-lg px-2 py-1.5"
           >
             <option value="above">above</option>
             <option value="below">below</option>
+            <option value="offline">offline</option>
           </select>
         </label>
-        <label className="flex flex-col gap-1">
-          <span className="text-xs font-mono uppercase tracking-widest text-brass">Value</span>
-          <input
-            required
-            type="number"
-            step="any"
-            value={threshold}
-            onChange={(e) => setThreshold(e.target.value)}
-            className="w-24 bg-ground border border-line rounded-lg px-2 py-1.5"
-          />
-        </label>
+        {!offline && (
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-mono uppercase tracking-widest text-brass">Port</span>
+            <input
+              type="number"
+              value={port}
+              onChange={(e) => setPort(Number(e.target.value))}
+              className="w-20 bg-ground border border-line rounded-lg px-2 py-1.5"
+            />
+          </label>
+        )}
+        {!offline && (
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-mono uppercase tracking-widest text-brass">Value</span>
+            <input
+              required
+              type="number"
+              step="any"
+              value={threshold}
+              onChange={(e) => setThreshold(e.target.value)}
+              className="w-24 bg-ground border border-line rounded-lg px-2 py-1.5"
+            />
+          </label>
+        )}
         <label className="flex flex-col gap-1">
           <span className="text-xs font-mono uppercase tracking-widest text-brass">For (min)</span>
           <input

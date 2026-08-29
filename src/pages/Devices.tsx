@@ -57,6 +57,7 @@ export default function Devices() {
   const [uid, setUid] = useState("");
   const [sparks, setSparks] = useState<Record<string, SparkPoint[]>>({});
   const [count24, setCount24] = useState<number | null>(null);
+  const [alerts, setAlerts] = useState<Record<string, number>>({});
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUid(data.user?.id ?? ""));
@@ -64,7 +65,7 @@ export default function Devices() {
     async function load() {
       const since6h = new Date(Date.now() - 6 * 3600 * 1000).toISOString();
       const since24h = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
-      const [dev, rdg, cnt] = await Promise.all([
+      const [dev, rdg, cnt, alr] = await Promise.all([
         supabase
           .from("devices")
           .select("id, serial, name, role, owner, fw_version, last_seen, wifi_rssi, battery_pct, led_on")
@@ -79,10 +80,16 @@ export default function Devices() {
           .from("readings")
           .select("*", { count: "exact", head: true })
           .gte("ts", since24h),
+        supabase.from("alert_events").select("device_id").is("resolved_at", null),
       ]);
       if (stop) return;
       setDevices((dev.data as Device[]) ?? []);
       setCount24(cnt.count ?? 0);
+      const alertCounts: Record<string, number> = {};
+      for (const a of (alr.data ?? []) as { device_id: string }[]) {
+        alertCounts[a.device_id] = (alertCounts[a.device_id] ?? 0) + 1;
+      }
+      setAlerts(alertCounts);
 
       const byDevice: Record<string, Record<number, SparkPoint[]>> = {};
       for (const r of (rdg.data ?? []) as { device_id: string; port_no: number; ts: string; value: number }[]) {
@@ -205,6 +212,11 @@ export default function Devices() {
                     {shared && (
                       <span className="text-[10px] font-mono uppercase tracking-wider text-brass border border-brassdim rounded px-1.5 py-px">
                         shared
+                      </span>
+                    )}
+                    {(alerts[d.id] ?? 0) > 0 && (
+                      <span className="text-[10px] font-mono uppercase tracking-wider text-danger border border-danger/50 rounded px-1.5 py-px animate-pulse">
+                        ⚠ {alerts[d.id]} alert{alerts[d.id] > 1 ? "s" : ""}
                       </span>
                     )}
                   </span>

@@ -52,10 +52,20 @@ export type AlertRule = {
   id: number;
   device_id: string;
   port_no: number;
-  condition: "above" | "below";
+  condition: "above" | "below" | "offline";
   threshold: number;
   for_minutes: number;
   enabled: boolean;
+};
+
+export type AlertEvent = {
+  id: number;
+  rule_id: number;
+  device_id: string;
+  started_at: string;
+  value: number;
+  acknowledged_at: string | null;
+  resolved_at: string | null;
 };
 
 export function isOnline(d: Device): boolean {
