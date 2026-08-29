@@ -259,7 +259,7 @@ export default function DevicePage() {
                           {portName(portNo)}
                         </span>
                         <div className="text-xl font-semibold tabular-nums leading-tight">
-                          {latest ? formatReading(port?.kind ?? null, latest.value) : "–"}
+                          {latest ? formatReading(port?.kind ?? null, latest.value, portNo) : "–"}
                         </div>
                         <div className="text-faint text-[10px] font-mono mt-0.5">
                           {latest ? timeAgo(latest.ts) : port?.kind ?? ""}
@@ -305,6 +305,8 @@ export default function DevicePage() {
           const portNo = activePort;
           const port = ports.find((p) => p.port_no === portNo);
           const isContact = port?.kind === "contact";
+          const isOutputEcho = portNo >= 21 && portNo <= 23;
+          const [hiLabel, loLabel] = isOutputEcho ? ["ON", "OFF"] : ["CLOSED", "OPEN"];
           const series = readings
             .filter((r) => r.port_no === portNo)
             .map((r) => ({
@@ -339,7 +341,7 @@ export default function DevicePage() {
                   )}
                   {latest && (
                     <span className="font-mono text-brass text-lg tabular-nums">
-                      {formatReading(port?.kind ?? null, latest.value)}
+                      {formatReading(port?.kind ?? null, latest.value, portNo)}
                     </span>
                   )}
                 </span>
@@ -365,11 +367,11 @@ export default function DevicePage() {
                     <LineChart data={series}>
                       <CartesianGrid stroke="#1e2125" vertical={false} />
                       <XAxis dataKey="time" stroke="#5c6067" fontSize={11} tickLine={false} axisLine={false} minTickGap={50} />
-                      <YAxis stroke="#5c6067" fontSize={11} tickLine={false} axisLine={false} width={40} domain={[0, 1]} ticks={[0, 1]} tickFormatter={(v: number) => (v ? "closed" : "open")} />
+                      <YAxis stroke="#5c6067" fontSize={11} tickLine={false} axisLine={false} width={40} domain={[0, 1]} ticks={[0, 1]} tickFormatter={(v: number) => (v ? hiLabel.toLowerCase() : loLabel.toLowerCase())} />
                       <Tooltip
                         contentStyle={{ background: "#1a1d21", border: "1px solid #26292e", borderRadius: 10, fontSize: 12 }}
                         labelStyle={{ color: "#8f939a" }}
-                        formatter={(v) => [Number(v) >= 0.5 ? "CLOSED" : "OPEN", ""]}
+                        formatter={(v) => [Number(v) >= 0.5 ? hiLabel : loLabel, ""]}
                       />
                       <Line type="stepAfter" dataKey="value" stroke="#e4e3dd" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
                     </LineChart>

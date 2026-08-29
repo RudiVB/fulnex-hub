@@ -96,7 +96,11 @@ export function defaultPortName(port: number): string {
   }
 }
 
-export function formatReading(kind: string | null, value: number): string {
+export function formatReading(kind: string | null, value: number, port?: number): string {
+  // output echoes read as ON/OFF, not open/closed
+  if (port !== undefined && port >= 21 && port <= 23 && kind === "contact") {
+    return value >= 0.5 ? "ON" : "OFF";
+  }
   switch (kind) {
     case "temp": return `${value.toFixed(1)} °C`;
     case "humidity": return `${value.toFixed(0)} %`;
