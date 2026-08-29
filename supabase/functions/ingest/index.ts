@@ -78,6 +78,22 @@ Deno.serve(async (req) => {
     if (error) {
       return Response.json({ ok: false, error: error.message }, { status: 500 });
     }
+
+    // auto-register ports so new sensors appear on the dashboard by kind
+    const seen = new Map<number, string | null>();
+    for (const r of Array.isArray(body.readings) ? body.readings : []) {
+      if (Number.isInteger(r?.port) && !seen.has(r.port)) {
+        seen.set(r.port, typeof r.kind === "string" ? r.kind : null);
+      }
+    }
+    const portRows = [...seen.entries()].map(([port_no, kind]) => ({
+      device_id: device.id,
+      port_no,
+      ...(kind ? { kind } : {}),
+    }));
+    if (portRows.length > 0) {
+      await supabase.from("ports").upsert(portRows, { onConflict: "device_id,port_no" });
+    }
   }
 
   await supabase.from("devices").update({
