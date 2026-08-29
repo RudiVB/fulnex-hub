@@ -15,7 +15,7 @@
 #define DEVICE_KEY       "biltong-key-m4q8z2"
 #define CLAIM_CODE       "BILT01"
 #define MQTT_SECRET      "flx4-bilt-h6v9s"
-#define FIRMWARE_VERSION "1.2.1"
+#define FIRMWARE_VERSION "1.3.0"
 
 // Platform
 #define INGEST_URL "https://esqtrcxaozymslwpeqgu.supabase.co/functions/v1/ingest"

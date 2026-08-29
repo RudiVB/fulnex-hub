@@ -126,6 +126,17 @@ Deno.serve(async (req) => {
     reply.pulse_ms = Math.min(2000, Math.max(50, num(d.pulse_ms) ?? 500));
   }
   reply.recipe = d.recipe === true;
+  // climate autopilot: the device runs these on its own hardware
+  reply.cl_en = d.cl_en === true;
+  const clim = (k: string, lo: number, hi: number) => {
+    const v = num(d[k]);
+    if (v !== undefined) reply[k] = Math.min(hi, Math.max(lo, Math.round(v)));
+  };
+  clim("cl_rh_hi", 1, 100);
+  clim("cl_rh_lo", 0, 99);
+  clim("cl_t_hi", 5, 60);
+  clim("cl_air_on", 0, 60);
+  clim("cl_air_rest", 0, 240);
   // cloud OTA: admin sets desired.fw_ver + fw_url; device self-updates
   if (typeof d.fw_ver === "string" && typeof d.fw_url === "string" && d.fw_ver !== body.fw) {
     reply.fw_ver = d.fw_ver;

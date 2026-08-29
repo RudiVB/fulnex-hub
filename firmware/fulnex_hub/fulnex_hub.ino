@@ -9,6 +9,10 @@
 //     outages and backfill with true timestamps (NTP)
 //   - Local reflex recipe: contact drives the LED on-device, ms
 //     latency, cloud informed afterwards (desired.recipe)
+//   - Climate autopilot: humidity/temperature drive the fans
+//     on-device with hysteresis + a timed airflow cycle, so a
+//     biltong or grow cabinet keeps itself right even offline
+//     (desired.cl_en / cl_rh_hi / cl_rh_lo / cl_t_hi / cl_air_*)
 //   - Factory reset: hold BOOT 5 s -> Wi-Fi wiped, portal opens
 //   - Telemetry: uptime, free heap, boot reason on every report
 //   - Boot fade hello on the LED output
@@ -65,6 +69,15 @@ long lastPulseId = -1;
 long lastBeepId = -1;
 bool recipeMode = false;
 bool otaInProgress = false;
+
+// climate autopilot — the cabinet keeps itself right even offline
+bool climEn = false;
+long climRhHi = 55, climRhLo = 48;     // exhaust fans on / off, %RH
+long climTHi = 30;                     // over-temp: all fans on, deg C
+long climAirOn = 5, climAirRest = 25;  // intake airflow cycle, minutes
+float climT = -1000.0f, climRh = -1.0f;
+bool climExhaust = false;
+unsigned long lastClimRead = 0;
 
 int sentContact = -999, sentMotion = -999, sentPower = -999;
 int liveContact = -999;
@@ -333,6 +346,18 @@ void applyControls(const String& body) {
   long secs = numFromBody(body, "\"interval\":", -1);
   if (secs >= 10 && secs <= 3600) intervalMs = secs * 1000UL;
 
+  // climate autopilot settings — parsed before the manual toggles so
+  // "enabled" wins ownership of the fans within the same message
+  if (body.indexOf("\"cl_en\":true") >= 0)  climEn = true;
+  if (body.indexOf("\"cl_en\":false") >= 0) { climEn = false; climExhaust = false; }
+  long v;
+  v = numFromBody(body, "\"cl_rh_hi\":", -1);    if (v >= 1 && v <= 100) climRhHi = v;
+  v = numFromBody(body, "\"cl_rh_lo\":", -1);    if (v >= 0 && v <= 99)  climRhLo = v;
+  v = numFromBody(body, "\"cl_t_hi\":", -1);     if (v >= 5 && v <= 60)  climTHi = v;
+  v = numFromBody(body, "\"cl_air_on\":", -1);   if (v >= 0 && v <= 60)  climAirOn = v;
+  v = numFromBody(body, "\"cl_air_rest\":", -1); if (v >= 0 && v <= 240) climAirRest = v;
+  if (climRhLo >= climRhHi) climRhLo = climRhHi - 1;   // hysteresis stays sane
+
   if (body.indexOf("\"led\":true") >= 0 || body.indexOf("\"led\":false") >= 0) {
     bool ledOn = body.indexOf("\"led\":true") >= 0;
     long bri = numFromBody(body, "\"brightness\":", 100);
@@ -340,26 +365,37 @@ void applyControls(const String& body) {
   }
 
 #if OUT2_PIN >= 0
-  if (body.indexOf("\"led2\":true") >= 0)  { digitalWrite(OUT2_PIN, OUT2_ACTIVE); appliedOut2 = 1; }
-  if (body.indexOf("\"led2\":false") >= 0) { digitalWrite(OUT2_PIN, OUT2_OFFLVL); appliedOut2 = 0; }
+  // while the autopilot is enabled it owns outputs 2 & 3 — manual
+  // toggles and pulses would fight the climate control
+  if (!climEn) {
+    if (body.indexOf("\"led2\":true") >= 0)  { digitalWrite(OUT2_PIN, OUT2_ACTIVE); appliedOut2 = 1; }
+    if (body.indexOf("\"led2\":false") >= 0) { digitalWrite(OUT2_PIN, OUT2_OFFLVL); appliedOut2 = 0; }
 
-  long pid = numFromBody(body, "\"pulse_id\":", -1);
-  if (pid >= 0) {
-    if (lastPulseId < 0) lastPulseId = pid;
-    else if (pid > lastPulseId) {
-      long ms = numFromBody(body, "\"pulse_ms\":", 500);
-      if (ms < 50) ms = 50;
-      if (ms > 2000) ms = 2000;
-      digitalWrite(OUT2_PIN, OUT2_ACTIVE); delay(ms); digitalWrite(OUT2_PIN, OUT2_OFFLVL);
-      lastPulseId = pid;
-      Serial.printf("[fulnex] pulse %ldms (id %ld)\n", ms, pid);
+    long pid = numFromBody(body, "\"pulse_id\":", -1);
+    if (pid >= 0) {
+      if (lastPulseId < 0) lastPulseId = pid;
+      else if (pid > lastPulseId) {
+        long ms = numFromBody(body, "\"pulse_ms\":", 500);
+        if (ms < 50) ms = 50;
+        if (ms > 2000) ms = 2000;
+        digitalWrite(OUT2_PIN, OUT2_ACTIVE); delay(ms); digitalWrite(OUT2_PIN, OUT2_OFFLVL);
+        lastPulseId = pid;
+        Serial.printf("[fulnex] pulse %ldms (id %ld)\n", ms, pid);
+      }
     }
+  } else {
+    // still track pulse ids so a stale one can't fire the moment
+    // the autopilot is switched off
+    long pid = numFromBody(body, "\"pulse_id\":", -1);
+    if (pid > lastPulseId) lastPulseId = pid;
   }
 #endif
 
 #if OUT3_PIN >= 0
-  if (body.indexOf("\"led3\":true") >= 0)  { digitalWrite(OUT3_PIN, OUT3_ACTIVE); appliedOut3 = 1; }
-  if (body.indexOf("\"led3\":false") >= 0) { digitalWrite(OUT3_PIN, OUT3_OFFLVL); appliedOut3 = 0; }
+  if (!climEn) {
+    if (body.indexOf("\"led3\":true") >= 0)  { digitalWrite(OUT3_PIN, OUT3_ACTIVE); appliedOut3 = 1; }
+    if (body.indexOf("\"led3\":false") >= 0) { digitalWrite(OUT3_PIN, OUT3_OFFLVL); appliedOut3 = 0; }
+  }
 #endif
 
   long bid = numFromBody(body, "\"beep_id\":", -1);
@@ -469,6 +505,61 @@ void checkEvents() {
     lastReport = millis();
   }
 }
+
+// ---- climate autopilot --------------------------------------
+// Decides on the device so a dead router can't spoil the meat:
+//  - humidity >= cl_rh_hi -> exhaust fans (out3) on, and they stay
+//    on until it falls back to cl_rh_lo (hysteresis, no chatter)
+//  - temp >= cl_t_hi -> every fan on until it cools off
+//  - intake fans (out2) cycle cl_air_on min on / cl_air_rest min
+//    rest for steady airflow without over-drying
+// Any change reports immediately so the dashboard shows it live.
+#if DHT_PIN >= 0 && OUT3_PIN >= 0
+void climateTick() {
+  if (!climEn) return;
+  unsigned long now = millis();
+  if (now - lastClimRead >= 5000) {      // DHT22 wants >= 2 s between reads
+    lastClimRead = now;
+    float t = dht.readTemperature();
+    float h = dht.readHumidity();
+    if (!isnan(t)) climT = t;
+    if (!isnan(h)) climRh = h;
+  }
+  if (climRh < 0) return;                // no reading yet, do nothing
+
+  if (!climExhaust && climRh >= (float)climRhHi) climExhaust = true;
+  if (climExhaust && climRh <= (float)climRhLo)  climExhaust = false;
+  bool hot = climT > -100 && climT >= (float)climTHi;
+
+  unsigned long cyc = (unsigned long)(climAirOn + climAirRest) * 60000UL;
+  bool air = climAirOn > 0 &&
+             (cyc == 0 || (now % cyc) < (unsigned long)climAirOn * 60000UL);
+
+  bool changed = false;
+  int want3 = (climExhaust || hot) ? 1 : 0;
+  if (want3 != appliedOut3) {
+    digitalWrite(OUT3_PIN, want3 ? OUT3_ACTIVE : OUT3_OFFLVL);
+    appliedOut3 = want3;
+    changed = true;
+    Serial.printf("[fulnex] autopilot: exhaust %s (%.1f %%RH, %.1f C)\n",
+                  want3 ? "ON" : "off", climRh, climT);
+  }
+#if OUT2_PIN >= 0
+  int want2 = (air || hot) ? 1 : 0;
+  if (want2 != appliedOut2) {
+    digitalWrite(OUT2_PIN, want2 ? OUT2_ACTIVE : OUT2_OFFLVL);
+    appliedOut2 = want2;
+    changed = true;
+    Serial.printf("[fulnex] autopilot: airflow %s\n", want2 ? "ON" : "off");
+  }
+#endif
+  if (changed && now - lastEventMs > 2000) {
+    lastEventMs = now;
+    report();                            // dashboard sees the move at once
+    lastReport = millis();
+  }
+}
+#endif
 
 // ---- factory reset: hold BOOT (GPIO0) for 5 s ---------------
 void checkFactoryReset() {
@@ -626,6 +717,9 @@ void loop() {
   setStatusLed(true);
 
   checkEvents();
+#if DHT_PIN >= 0 && OUT3_PIN >= 0
+  climateTick();
+#endif
 
   if (millis() - lastReport >= intervalMs) {
     lastReport = millis();

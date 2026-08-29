@@ -80,6 +80,12 @@ export default function DevicePage() {
         ...(typeof d.brightness === "number" ? { brightness: d.brightness } : {}),
         ...(typeof d.interval === "number" ? { interval: d.interval } : {}),
         recipe: d.recipe === true,
+        cl_en: d.cl_en === true,
+        ...(typeof d.cl_rh_hi === "number" ? { cl_rh_hi: d.cl_rh_hi } : {}),
+        ...(typeof d.cl_rh_lo === "number" ? { cl_rh_lo: d.cl_rh_lo } : {}),
+        ...(typeof d.cl_t_hi === "number" ? { cl_t_hi: d.cl_t_hi } : {}),
+        ...(typeof d.cl_air_on === "number" ? { cl_air_on: d.cl_air_on } : {}),
+        ...(typeof d.cl_air_rest === "number" ? { cl_air_rest: d.cl_air_rest } : {}),
         ...overrides,
       };
       c.publish(
@@ -405,6 +411,7 @@ export default function DevicePage() {
 
         <div className="space-y-4 sm:space-y-6">
           <ControlsCard device={device} onChange={load} publish={publishInstant} instant={instant} />
+          <AutopilotCard device={device} onChange={load} publish={publishInstant} readings={readings} />
           <RulesCard deviceId={device.id} rules={rules} portNos={portNos} onChange={load} />
           <OtaCard device={device} publish={publishInstant} onChange={load} />
           {uid && device.owner === uid && <ShareCard deviceId={device.id} />}
@@ -500,6 +507,160 @@ function OtaCard({ device, publish, onChange }: {
   );
 }
 
+// Climate autopilot: the settings live in desired.cl_* and the DEVICE
+// runs them — humidity drives the exhaust fans with hysteresis, heat
+// turns everything on, and the intakes cycle for steady airflow. It
+// keeps working when the internet doesn't.
+const PRESETS = [
+  { key: "biltong", label: "Biltong", rh_hi: 55, rh_lo: 48, t_hi: 30, air_on: 5, air_rest: 25 },
+  { key: "gentle", label: "Gentle dry", rh_hi: 65, rh_lo: 58, t_hi: 28, air_on: 3, air_rest: 45 },
+  { key: "grow", label: "Grow", rh_hi: 70, rh_lo: 60, t_hi: 32, air_on: 10, air_rest: 20 },
+] as const;
+
+function AutopilotCard({ device, onChange, publish, readings }: {
+  device: Device;
+  onChange: () => void;
+  publish: (o: Record<string, unknown>) => void;
+  readings: Reading[];
+}) {
+  const desired = (device.desired ?? {}) as Record<string, unknown>;
+  const num = (k: string, fb: number) =>
+    typeof desired[k] === "number" ? (desired[k] as number) : fb;
+  const enabled = desired.cl_en === true;
+  const [rhHi, setRhHi] = useState(() => num("cl_rh_hi", 55));
+  const [rhLo, setRhLo] = useState(() => num("cl_rh_lo", 48));
+  const [tHi, setTHi] = useState(() => num("cl_t_hi", 30));
+  const [airOn, setAirOn] = useState(() => num("cl_air_on", 5));
+  const [airRest, setAirRest] = useState(() => num("cl_air_rest", 25));
+  const [saved, setSaved] = useState<string | null>(null);
+
+  // live climate, straight from the tiles' data
+  const latest = (portNo: number) =>
+    [...readings].reverse().find((r) => r.port_no === portNo)?.value;
+  const rhNow = latest(9);
+  const tNow = latest(8);
+  const exhaustOn = (latest(23) ?? 0) >= 0.5;
+
+  async function save(patch: Record<string, unknown>) {
+    publish(patch);
+    await supabase.rpc("patch_desired", { p_device_id: device.id, p_patch: patch });
+    setSaved("sent to the device");
+    setTimeout(() => setSaved(null), 2500);
+    onChange();
+  }
+
+  function applyPreset(p: (typeof PRESETS)[number]) {
+    setRhHi(p.rh_hi); setRhLo(p.rh_lo); setTHi(p.t_hi);
+    setAirOn(p.air_on); setAirRest(p.air_rest);
+    save({ cl_rh_hi: p.rh_hi, cl_rh_lo: p.rh_lo, cl_t_hi: p.t_hi,
+           cl_air_on: p.air_on, cl_air_rest: p.air_rest });
+  }
+
+  const Field = ({ label, value, set, unit, min, max }: {
+    label: string; value: number; set: (n: number) => void;
+    unit: string; min: number; max: number;
+  }) => (
+    <label className="flex items-center justify-between gap-2 w-full">
+      <span className="text-[11px] font-mono uppercase tracking-widest text-mute">{label}</span>
+      <span className="flex items-center gap-1.5">
+        <input
+          type="number"
+          min={min}
+          max={max}
+          value={value}
+          onChange={(e) => set(Number(e.target.value))}
+          className="w-16 bg-ground border border-line rounded-lg px-2 py-1 text-sm font-mono text-right focus:outline-none focus:border-brass"
+        />
+        <span className="text-faint text-xs font-mono w-8">{unit}</span>
+      </span>
+    </label>
+  );
+
+  return (
+    <div className="card p-5">
+      <div className="flex items-center justify-between mb-1">
+        <h2 className="font-medium">Autopilot</h2>
+        <button
+          onClick={() =>
+            save(enabled
+              ? { cl_en: false }
+              : { cl_en: true, cl_rh_hi: rhHi, cl_rh_lo: rhLo, cl_t_hi: tHi,
+                  cl_air_on: airOn, cl_air_rest: airRest })
+          }
+          className="flex items-center gap-3 group"
+        >
+          <span className="text-xs font-mono uppercase tracking-widest text-mute group-hover:text-ink">
+            {enabled ? "on" : "off"}
+          </span>
+          <span className={`relative w-11 h-6 rounded-full transition-colors flex items-center px-0.5 ${
+            enabled ? "bg-brass justify-end shadow-[0_0_14px_rgba(255,255,255,.35)]" : "bg-line justify-start"
+          }`}>
+            <motion.span layout transition={{ type: "spring", stiffness: 550, damping: 32 }} className="w-5 h-5 rounded-full bg-ink" />
+          </span>
+        </button>
+      </div>
+      <p className="text-mute text-sm mb-4">
+        Runs on the device itself — the cabinet holds these numbers even if
+        the internet drops. While on, the autopilot owns the fans.
+      </p>
+
+      {enabled && (
+        <div className="text-xs font-mono mb-4 rounded-lg border border-line bg-ground px-3 py-2 space-y-0.5">
+          <div className="text-mute">
+            now{" "}
+            <span className="text-ink">{typeof rhNow === "number" ? `${rhNow.toFixed(0)} %RH` : "–"}</span>
+            {" · "}
+            <span className="text-ink">{typeof tNow === "number" ? `${tNow.toFixed(1)} °C` : "–"}</span>
+          </div>
+          <div className={exhaustOn ? "text-ok" : "text-faint"}>
+            {exhaustOn
+              ? "exhaust fans running — drying the air"
+              : typeof rhNow === "number"
+                ? `holding · fans kick in at ${rhHi} %RH`
+                : "waiting for a reading"}
+          </div>
+        </div>
+      )}
+
+      <div className="flex items-center gap-1.5 mb-4">
+        {PRESETS.map((p) => (
+          <button
+            key={p.key}
+            onClick={() => applyPreset(p)}
+            className="text-xs font-mono rounded-lg px-3 py-1 border border-line text-faint hover:text-mute hover:border-brassdim transition-colors"
+            title={`${p.rh_hi}/${p.rh_lo} %RH · max ${p.t_hi} °C · air ${p.air_on}/${p.air_rest} min`}
+          >
+            {p.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="space-y-3">
+        <Field label="Fans on at" value={rhHi} set={setRhHi} unit="%RH" min={1} max={100} />
+        <Field label="Fans off at" value={rhLo} set={setRhLo} unit="%RH" min={0} max={99} />
+        <Field label="Max temp" value={tHi} set={setTHi} unit="°C" min={5} max={60} />
+        <Field label="Airflow run" value={airOn} set={setAirOn} unit="min" min={0} max={60} />
+        <Field label="Airflow rest" value={airRest} set={setAirRest} unit="min" min={0} max={240} />
+      </div>
+
+      <div className="flex items-center gap-3 mt-4">
+        <button
+          onClick={() => {
+            const lo = Math.min(rhLo, rhHi - 1);
+            setRhLo(lo);
+            save({ cl_rh_hi: rhHi, cl_rh_lo: lo, cl_t_hi: tHi,
+                   cl_air_on: airOn, cl_air_rest: airRest });
+          }}
+          className="btn-brass font-medium rounded-lg px-4 py-1.5 text-sm"
+        >
+          Save settings
+        </button>
+        {saved && <span className="text-ok text-xs font-mono">{saved}</span>}
+      </div>
+    </div>
+  );
+}
+
 function ControlsCard({ device, onChange, publish, instant }: {
   device: Device;
   onChange: () => void;
@@ -514,6 +675,7 @@ function ControlsCard({ device, onChange, publish, instant }: {
   const led2 = desired.led2 === true;
   const led3 = desired.led3 === true;
   const recipe = desired.recipe === true;
+  const autopilot = desired.cl_en === true;   // autopilot owns outputs 2 & 3
   const interval = typeof desired.interval === "number" ? (desired.interval as number) : 60;
 
   async function updateDesired(patch: Record<string, unknown>) {
@@ -532,7 +694,11 @@ function ControlsCard({ device, onChange, publish, instant }: {
         </span>
       </div>
       <div className="flex flex-col items-start gap-5">
-        <button onClick={() => updateDesired({ led2: !led2 })} className="flex items-center gap-3 group">
+        <button
+          onClick={() => !autopilot && updateDesired({ led2: !led2 })}
+          className={`flex items-center gap-3 group ${autopilot ? "opacity-40 cursor-not-allowed" : ""}`}
+          title={autopilot ? "the autopilot owns the fans while enabled" : undefined}
+        >
           <span
             className="text-xs font-mono uppercase tracking-widest text-mute group-hover:text-ink"
             onClick={(e) => {
@@ -551,7 +717,11 @@ function ControlsCard({ device, onChange, publish, instant }: {
           </span>
         </button>
 
-        <button onClick={() => updateDesired({ led3: !led3 })} className="flex items-center gap-3 group">
+        <button
+          onClick={() => !autopilot && updateDesired({ led3: !led3 })}
+          className={`flex items-center gap-3 group ${autopilot ? "opacity-40 cursor-not-allowed" : ""}`}
+          title={autopilot ? "the autopilot owns the fans while enabled" : undefined}
+        >
           <span
             className="text-xs font-mono uppercase tracking-widest text-mute group-hover:text-ink"
             onClick={(e) => {
@@ -586,7 +756,8 @@ function ControlsCard({ device, onChange, publish, instant }: {
         </label>
 
         <button
-          disabled={pulsing}
+          disabled={pulsing || autopilot}
+          title={autopilot ? "the autopilot owns the fans while enabled" : undefined}
           onClick={async () => {
             setPulsing(true);
             const nextId = (typeof desired.pulse_id === "number" ? (desired.pulse_id as number) : 0) + 1;
