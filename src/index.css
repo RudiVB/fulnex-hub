@@ -9,23 +9,12 @@ body {
 body::before {
   content: "";
   position: fixed;
-  inset: -25%;
+  inset: 0;
   pointer-events: none;
   z-index: 0;
   background:
-    linear-gradient(115deg, transparent 38%, rgba(255, 255, 255, 0.05) 44%, transparent 50%),
-    linear-gradient(115deg, transparent 58%, rgba(255, 255, 255, 0.028) 65%, transparent 73%),
-    radial-gradient(1000px 500px at 30% -220px, rgba(255, 255, 255, 0.05), transparent 70%);
-  animation: beam-drift 16s ease-in-out infinite alternate;
-}
-
-@keyframes beam-drift {
-  from { transform: translateX(-2.5%); }
-  to { transform: translateX(2.5%); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  body::before { animation: none; }
+    radial-gradient(1400px 800px at 50% -300px, rgba(255, 255, 255, 0.055), transparent 62%),
+    radial-gradient(1000px 1000px at 50% 120%, rgba(255, 255, 255, 0.02), transparent 60%);
 }
 
 body::after {
