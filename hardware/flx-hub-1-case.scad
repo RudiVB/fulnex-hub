@@ -22,22 +22,22 @@ part = "both";        // "base" | "lid" | "deck" | "both"
 /* ---------- master dimensions (mm) ---------- */
 W  = 120;             // square squircle footprint
 D  = 120;
-H  = 34;              // base wall height
-R  = 24;              // corner radius — the softness of the render
+H  = 38;              // base wall height (3 jack rows need it)
+R  = 34;              // corner radius — properly soft, like the render
 T  = 2.4;             // wall
 Tf = 2.8;             // floor
 Tlid = 3.0;           // lid plate (crown rises above)
 
 /* ---------- front: 12 sense jacks on the flat chord ----------
-   flat front spans x = R .. W-R  (72 mm at R=24)               */
+   flat front spans x = R .. W-R  (52 mm at R=34): 3 rows of 4  */
 jack_d = 6.4;
-jack_cols = 6;  jack_pitch = 12;
-row_z1 = 11;  row_z2 = 24;          // two rows on the front wall
+jack_cols = 4;  jack_pitch = 12;
+jack_rows_z = [9, 19, 29];          // three rows on the front wall
 
 /* ---------- rear: USB-C + 3 output grommets ---------- */
-usb_w = 10; usb_h = 4.4; usb_cx = 34; usb_z = 8;
+usb_w = 10; usb_h = 4.4; usb_cx = 43; usb_z = 8;
 out_d = 8.2; out_z = 12;
-out_xs = [56, 72, 88];
+out_xs = [56, 68, 80];
 
 /* ---------- interior fit-out ---------- */
 pcb_w = 70;  pcb_d = 50;  pcb_x = 18; pcb_y = 30;
@@ -50,8 +50,8 @@ psu_x  = 46;  psu_y  = 98;  psu_w  = 27; psu_d  = 16;
 pipe_d = 2.0;                       // LED dot, on the TOP face
 logo = "FULNEX";
 logo_depth = 0.8;
-crown_inset = 8;                    // how far the crown shoulder steps in
-crown_rise = 2.6;                   // how much the crown rises
+crown_inset = 11;                   // how far the crown shoulder steps in
+crown_rise = 3.4;                   // how much the crown rises
 lidpost_xy = [[30, 30], [90, 30], [30, 90], [90, 90]];
 
 vent_n = 8;
@@ -90,7 +90,12 @@ module tiebar(x, y) {
 module base() {
   difference() {
     union() {
-      linear_extrude(Tf) squircle(W, D, R);
+      // floor with a soft chamfered bottom edge
+      hull() {
+        linear_extrude(0.01) offset(-1.8) squircle(W, D, R);
+        translate([0, 0, 1.6]) linear_extrude(0.01) squircle(W, D, R);
+      }
+      translate([0, 0, 1.6]) linear_extrude(Tf - 1.6) squircle(W, D, R);
       linear_extrude(H) shell2d();
 
       // deck standoffs
@@ -114,9 +119,9 @@ module base() {
       tiebar(84, 18);
     }
 
-    // ---- front chord: 12 jacks, 2 rows of 6 ----
+    // ---- front chord: 12 jacks, 3 rows of 4 ----
     x0 = W/2 - (jack_cols - 1) * jack_pitch / 2;
-    for (c = [0 : jack_cols - 1], z = [row_z1, row_z2])
+    for (c = [0 : jack_cols - 1], z = jack_rows_z)
       translate([x0 + c * jack_pitch, T + 1, z])
         rotate([90, 0, 0]) cylinder(d = jack_d, h = T + 4);
 
@@ -158,7 +163,12 @@ module base() {
 module lid() {
   difference() {
     union() {
-      linear_extrude(Tlid) squircle(W, D, R);
+      // plate with a chamfered underside edge (shadow-gap seam)
+      hull() {
+        linear_extrude(0.01) offset(-1.6) squircle(W, D, R);
+        translate([0, 0, 1.4]) linear_extrude(0.01) squircle(W, D, R);
+      }
+      translate([0, 0, 1.4]) linear_extrude(Tlid - 1.4) squircle(W, D, R);
       // the crown: a soft shoulder rising to a smaller squircle
       hull() {
         translate([0, 0, Tlid - 0.01]) linear_extrude(0.01)
