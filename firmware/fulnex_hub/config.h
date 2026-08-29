@@ -65,8 +65,10 @@
 // ------------------------------------------------------------
 //  OUTPUTS — controlled from the site
 // ------------------------------------------------------------
-#define OUT1_PIN        25    // "LED" toggle + brightness slider (PWM)
-#define OUT2_PIN        26    // "Output 2" toggle + Pulse button
+#define OUT1_PIN        26    // "LED" toggle + brightness slider (PWM)
+                              // GPIO25's output driver is dead on this
+                              // specific board — confirmed by bench test
+#define OUT2_PIN        33    // "Output 2" toggle + Pulse button
 #define BUZZER_PIN      -1    // e.g. 13 — site "beep" makes it chirp
 
 // ------------------------------------------------------------
