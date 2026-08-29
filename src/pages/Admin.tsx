@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { Device, isOnline, supabase, timeAgo } from "../lib/supabase";
 import { FadeUp } from "../components/motion";
+import { CaseViewer } from "../components/CaseViewer";
 
 const SITE = "https://fulnex-hub.vercel.app";
 
@@ -181,6 +182,18 @@ export default function Admin() {
             <ProvisionCard products={products} onChange={load} />
             <BuildDiagramCard />
           </div>
+          <FadeUp className="card p-5" delay={0.05}>
+            <div className="flex items-center gap-3 mb-1">
+              <span className="icon-chip"><Hammer size={17} strokeWidth={1.75} /></span>
+              <h2 className="font-medium">The case, in 3D</h2>
+            </div>
+            <p className="text-mute text-sm mb-4">
+              The actual print geometry, live from the STL — what comes off the printer
+              is exactly this. Front: 12 sense jacks. Rear: USB-C + three output grommets.
+              Base: the QR label recess.
+            </p>
+            <CaseViewer />
+          </FadeUp>
           <RunbookCard />
           <InventoryCard parts={parts} products={products} onChange={load} />
           <DownloadsCard fw={fw} />

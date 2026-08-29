@@ -21,6 +21,19 @@ import Preorder from "./pages/Preorder";
 import Plans from "./pages/Plans";
 import Orders from "./pages/Orders";
 import Manual from "./pages/Manual";
+import { CaseViewer } from "./components/CaseViewer";
+
+// unlinked: the real print geometry, viewable without admin rights
+function CasePreview() {
+  return (
+    <div className="mx-auto max-w-2xl px-4 py-12">
+      <div className="text-[10px] font-mono uppercase tracking-[0.25em] text-brass mb-1">FLX-HUB-1 · REV A</div>
+      <h1 className="text-2xl font-semibold tracking-tight mb-1">The case, in 3D</h1>
+      <p className="text-mute text-sm mb-5">The actual file the printer runs. Drag to inspect.</p>
+      <CaseViewer />
+    </div>
+  );
+}
 
 function Brand({ compact = false }: { compact?: boolean }) {
   return (
@@ -271,6 +284,7 @@ export default function App() {
           <Route path="/setup" element={<Setup />} />
           <Route path="/manual" element={<Manual />} />
           <Route path="/manual/:slug" element={<Manual />} />
+          <Route path="/case" element={<CasePreview />} />
           <Route path="/device/:id" element={session ? <DevicePage /> : <Navigate to="/login" />} />
           <Route path="/claim" element={<Claim />} />
           <Route path="/claim/:serial" element={<Claim />} />
