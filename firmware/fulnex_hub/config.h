@@ -8,7 +8,7 @@
 
 #define DEVICE_SERIAL   "FLX-0002"
 #define DEVICE_KEY      "olof-first-device-key-8c31"
-#define FIRMWARE_VERSION "0.1.0"
+#define FIRMWARE_VERSION "0.2.0"
 
 // Platform
 #define INGEST_URL "https://esqtrcxaozymslwpeqgu.supabase.co/functions/v1/ingest"
@@ -34,4 +34,5 @@
 #define ENABLE_TEST_BENCH 1
 #define POT_PIN           34
 #define SWITCH_PIN        27
-#define EXT_LED_PIN       25
+#define EXT_LED_PIN       25   // dimmable from the site (brightness slider)
+#define OUT2_PIN          26   // second output: site toggle + pulse button

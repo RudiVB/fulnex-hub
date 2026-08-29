@@ -147,6 +147,8 @@ export default function DevicePage() {
         </form>
       </FadeUp>
 
+      <ControlsCard device={device} onChange={load} />
+
       {portNos.length > 0 && (
         <Stagger className="grid gap-3 sm:gap-4" delay={0.1}>
           <div className="grid gap-3 sm:gap-4" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))" }}>
@@ -306,6 +308,86 @@ export default function DevicePage() {
       <RulesCard deviceId={device.id} rules={rules} portNos={portNos} onChange={load} />
 
       {uid && device.owner === uid && <ShareCard deviceId={device.id} />}
+    </div>
+  );
+}
+
+function ControlsCard({ device, onChange }: { device: Device; onChange: () => void }) {
+  const desired = (device.desired ?? {}) as Record<string, unknown>;
+  const [brightness, setBrightness] = useState<number>(
+    typeof desired.brightness === "number" ? (desired.brightness as number) : 100,
+  );
+  const [pulsing, setPulsing] = useState(false);
+  const led2 = desired.led2 === true;
+  const interval = typeof desired.interval === "number" ? (desired.interval as number) : 60;
+
+  async function updateDesired(patch: Record<string, unknown>) {
+    await supabase
+      .from("devices")
+      .update({ desired: { ...desired, ...patch } })
+      .eq("id", device.id);
+    onChange();
+  }
+
+  return (
+    <div className="card p-5">
+      <div className="flex items-baseline justify-between mb-4">
+        <h2 className="font-medium">Controls</h2>
+        <span className="text-faint text-[11px] font-mono">
+          applies on next report (≤ {interval} s)
+        </span>
+      </div>
+      <div className="flex flex-wrap items-center gap-x-8 gap-y-5">
+        <button onClick={() => updateDesired({ led2: !led2 })} className="flex items-center gap-3 group">
+          <span className="text-xs font-mono uppercase tracking-widest text-mute group-hover:text-ink">Output 2</span>
+          <span className={`relative w-11 h-6 rounded-full transition-colors flex items-center px-0.5 ${
+            led2 ? "bg-brass justify-end shadow-[0_0_14px_rgba(255,255,255,.35)]" : "bg-line justify-start"
+          }`}>
+            <motion.span layout transition={{ type: "spring", stiffness: 550, damping: 32 }} className="w-5 h-5 rounded-full bg-ink" />
+          </span>
+        </button>
+
+        <label className="flex items-center gap-3">
+          <span className="text-xs font-mono uppercase tracking-widest text-mute">Brightness</span>
+          <input
+            type="range"
+            min={0}
+            max={100}
+            value={brightness}
+            onChange={(e) => setBrightness(Number(e.target.value))}
+            onMouseUp={() => updateDesired({ brightness })}
+            onTouchEnd={() => updateDesired({ brightness })}
+            className="w-36 accent-brass"
+          />
+          <span className="font-mono text-sm tabular-nums w-10">{brightness}%</span>
+        </label>
+
+        <button
+          disabled={pulsing}
+          onClick={async () => {
+            setPulsing(true);
+            const nextId = (typeof desired.pulse_id === "number" ? (desired.pulse_id as number) : 0) + 1;
+            await updateDesired({ pulse_id: nextId, pulse_ms: 500 });
+            setTimeout(() => setPulsing(false), 1500);
+          }}
+          className="btn-brass font-medium rounded-lg px-4 py-1.5 text-sm disabled:opacity-50"
+        >
+          {pulsing ? "pulsing…" : "Pulse (500 ms)"}
+        </button>
+
+        <label className="flex items-center gap-3">
+          <span className="text-xs font-mono uppercase tracking-widest text-mute">Reports every</span>
+          <select
+            value={interval}
+            onChange={(e) => updateDesired({ interval: Number(e.target.value) })}
+            className="bg-ground border border-line rounded-lg px-2 py-1.5 text-sm"
+          >
+            <option value={10}>10 s — live</option>
+            <option value={60}>60 s — normal</option>
+            <option value={300}>5 min — quiet</option>
+          </select>
+        </label>
+      </div>
     </div>
   );
 }

@@ -39,6 +39,26 @@ unsigned long lastReport = 0;
 unsigned long intervalMs = 60000;
 int failures = 0;
 bool unauthorized = false;
+long lastPulseId = -1;
+
+// find "key":<number> in the reply; returns fallback if absent
+long numFromBody(const String& body, const char* key, long fallback) {
+  int i = body.indexOf(key);
+  if (i < 0) return fallback;
+  return body.substring(i + strlen(key)).toInt();
+}
+
+void setLedDuty(int pct) {
+#if ENABLE_TEST_BENCH
+  if (pct < 0) pct = 0;
+  if (pct > 100) pct = 100;
+#if defined(ESP_ARDUINO_VERSION_MAJOR) && ESP_ARDUINO_VERSION_MAJOR >= 3
+  ledcWrite(EXT_LED_PIN, pct * 255 / 100);
+#else
+  ledcWrite(0, pct * 255 / 100);
+#endif
+#endif
+}
 
 void flashLed(int times, int onMs, int offMs) {
   for (int i = 0; i < times; i++) {
@@ -147,9 +167,30 @@ void report() {
     }
 
 #if ENABLE_TEST_BENCH
-    // remote control: the server replies {"led":true/false}
-    if (body.indexOf("\"led\":true") >= 0)  digitalWrite(EXT_LED_PIN, HIGH);
-    if (body.indexOf("\"led\":false") >= 0) digitalWrite(EXT_LED_PIN, LOW);
+    // remote controls, carried in the reply:
+    // led on/off + brightness (PWM), output 2 toggle, momentary pulse
+    bool ledOn = body.indexOf("\"led\":true") >= 0;
+    long bri = numFromBody(body, "\"brightness\":", 100);
+    setLedDuty(ledOn ? (int)bri : 0);
+
+    if (body.indexOf("\"led2\":true") >= 0)  digitalWrite(OUT2_PIN, HIGH);
+    if (body.indexOf("\"led2\":false") >= 0) digitalWrite(OUT2_PIN, LOW);
+
+    long pid = numFromBody(body, "\"pulse_id\":", -1);
+    if (pid >= 0) {
+      if (lastPulseId < 0) {
+        lastPulseId = pid;            // sync on boot, don't replay old pulses
+      } else if (pid > lastPulseId) {
+        long ms = numFromBody(body, "\"pulse_ms\":", 500);
+        if (ms < 50) ms = 50;
+        if (ms > 2000) ms = 2000;
+        digitalWrite(OUT2_PIN, HIGH);
+        delay(ms);
+        digitalWrite(OUT2_PIN, LOW);
+        lastPulseId = pid;
+        Serial.printf("[fulnex] pulse %ldms fired (id %ld)\n", ms, pid);
+      }
+    }
 #endif
   } else if (status == 401) {
     unauthorized = true;  // wrong serial/key — fast blink, no reboot spiral
@@ -173,8 +214,15 @@ void setup() {
 
 #if ENABLE_TEST_BENCH
   pinMode(SWITCH_PIN, INPUT_PULLUP);
-  pinMode(EXT_LED_PIN, OUTPUT);
-  digitalWrite(EXT_LED_PIN, LOW);
+  pinMode(OUT2_PIN, OUTPUT);
+  digitalWrite(OUT2_PIN, LOW);
+#if defined(ESP_ARDUINO_VERSION_MAJOR) && ESP_ARDUINO_VERSION_MAJOR >= 3
+  ledcAttach(EXT_LED_PIN, 5000, 8);      // PWM for the brightness slider
+#else
+  ledcSetup(0, 5000, 8);
+  ledcAttachPin(EXT_LED_PIN, 0);
+#endif
+  setLedDuty(0);
 #endif
 
   // Wi-Fi: connects with saved credentials, or opens the setup portal

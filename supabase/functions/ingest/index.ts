@@ -51,7 +51,7 @@ Deno.serve(async (req) => {
 
   const { data: device } = await supabase
     .from("devices")
-    .select("id, key_hash, led_on")
+    .select("id, key_hash, led_on, desired")
     .eq("serial", serial)
     .maybeSingle();
 
@@ -103,10 +103,23 @@ Deno.serve(async (req) => {
     ...(typeof body.fw === "string" ? { fw_version: body.fw } : {}),
   }).eq("id", device.id);
 
-  return Response.json({
+  // flatten desired state into the reply; firmware acts on known keys
+  const d = (device.desired ?? {}) as Record<string, unknown>;
+  const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : undefined);
+  const interval = Math.min(3600, Math.max(10, num(d.interval) ?? 60));
+  const reply: Record<string, unknown> = {
     ok: true,
     accepted: rows.length,
-    interval: 60,
+    interval,
     led: device.led_on === true,
-  });
+    led2: d.led2 === true,
+  };
+  const brightness = num(d.brightness);
+  if (brightness !== undefined) reply.brightness = Math.min(100, Math.max(0, brightness));
+  const pulseId = num(d.pulse_id);
+  if (pulseId !== undefined) {
+    reply.pulse_id = pulseId;
+    reply.pulse_ms = Math.min(2000, Math.max(50, num(d.pulse_ms) ?? 500));
+  }
+  return Response.json(reply);
 });

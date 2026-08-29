@@ -21,6 +21,7 @@ export type Device = {
   wifi_rssi: number | null;
   battery_pct: number | null;
   led_on: boolean;
+  desired: Record<string, unknown> | null;
 };
 
 export type Port = {
