@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { ReactNode, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion, useScroll, useTransform } from "framer-motion";
 import {
@@ -9,16 +9,21 @@ import {
   DeviceMark, DoorMark, PuckMark, Reveal, SwitchMark, easeOut,
 } from "../components/motion";
 
-function RenderImg({ name, alt, className }: { name: string; alt: string; className?: string }) {
+function RenderImg({ name, alt, className, fallback }: {
+  name: string;
+  alt: string;
+  className?: string;
+  fallback?: ReactNode;
+}) {
   const [ok, setOk] = useState(true);
-  if (!ok) return null;
+  if (!ok) return <>{fallback ?? null}</>;
   return (
     <img
       src={`/renders/${name}`}
       alt={alt}
       loading="lazy"
       onError={() => setOk(false)}
-      className={`rounded-2xl border border-line object-cover ${className ?? ""}`}
+      className={`rounded-2xl border border-line object-cover w-full h-full ${className ?? ""}`}
     />
   );
 }
@@ -40,9 +45,38 @@ const CAPS = [
   { icon: DoorOpen, title: "Doors & gates", body: "\"Garage left open\" at 22:00. Gate activity while you're away. The wondering stops." },
   { icon: HeartPulse, title: "The living-alone monitor", body: "Ma's kettle boiled like always. No movement by 9? The family knows. No camera, no lost dignity." },
   { icon: MapPin, title: "Track anything", body: "Coin-sized tags on trolleys, crates, toolboxes. The hub hears where everything is." },
-  { icon: Bell, title: "Recipes", body: "If this, then that — leak → valve off. 2am door → lights + siren. Runs even offline." },
-  { icon: ShieldCheck, title: "Yours forever", body: "Free tier never expires. No app to install. It updates itself over Wi-Fi with new abilities." },
+  { icon: Bell, title: "Recipes & reflexes", body: "If this, then that — leak → valve off. Humidity high → fans on. Runs on the device, even offline." },
+  { icon: ShieldCheck, title: "Yours forever", body: "Free tier never expires. No app to install. It updates itself over the air with new abilities." },
 ];
+
+function ProductRow({ img, imgAlt, fallback, eyebrow, title, body, price, flip = false }: {
+  img: string;
+  imgAlt: string;
+  fallback: ReactNode;
+  eyebrow: string;
+  title: string;
+  body: string;
+  price: string;
+  flip?: boolean;
+}) {
+  return (
+    <Reveal>
+      <div className={`grid lg:grid-cols-2 gap-8 lg:gap-14 items-center ${flip ? "lg:[direction:rtl]" : ""}`}>
+        <div className="lg:[direction:ltr] card card-hover overflow-hidden aspect-[4/3] flex items-center justify-center bg-panel">
+          <RenderImg name={img} alt={imgAlt} fallback={
+            <div className="flex items-center justify-center w-full h-full">{fallback}</div>
+          } />
+        </div>
+        <div className="lg:[direction:ltr]">
+          <div className="text-[11px] font-mono uppercase tracking-[0.25em] text-brassdim mb-3">{eyebrow}</div>
+          <h3 className="text-2xl sm:text-3xl font-semibold tracking-tight mb-4">{title}</h3>
+          <p className="text-mute text-lg leading-relaxed mb-5 max-w-md">{body}</p>
+          <div className="font-mono text-brass">{price}</div>
+        </div>
+      </div>
+    </Reveal>
+  );
+}
 
 export default function Landing() {
   const { scrollY } = useScroll();
@@ -75,7 +109,7 @@ export default function Landing() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.7, ease: easeOut }}
           >
-            Your house, watched.
+            Your things, watched.
           </motion.p>
           <motion.div
             className="flex flex-wrap items-center justify-center gap-4 mt-10"
@@ -87,10 +121,10 @@ export default function Landing() {
               Get started
             </Link>
             <a
-              href="#what"
+              href="#hardware"
               className="border border-line rounded-xl px-7 py-3 text-mute hover:text-ink hover:border-brassdim transition-colors"
             >
-              What it does
+              See the hardware
             </a>
           </motion.div>
         </motion.div>
@@ -104,7 +138,7 @@ export default function Landing() {
       </section>
 
       {/* MESSAGES */}
-      <section id="what" className="mx-auto max-w-3xl px-5 py-24 sm:py-32">
+      <section className="mx-auto max-w-3xl px-5 py-24 sm:py-32">
         <Reveal>
           <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight text-center mb-4">
             It notices, so you don't have to.
@@ -130,47 +164,97 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* THE FAMILY */}
+      {/* THE HARDWARE — editorial rows */}
+      <section id="hardware" className="mx-auto max-w-5xl px-5 py-24 sm:py-32 space-y-24 sm:space-y-32">
+        <Reveal>
+          <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight text-center">
+            The hardware.
+          </h2>
+        </Reveal>
+
+        <ProductRow
+          img="hub.jpg"
+          imgAlt="The Fulnex Hub"
+          fallback={<DeviceMark size={190} />}
+          eyebrow="The brain · one per home"
+          title="Fulnex Hub"
+          body="Plugs in anywhere. Wi-Fi to the cloud, Bluetooth ears for every sense in the house — and a battery inside, so it's the thing that tells you the power went out. Commands land in about a second; it updates itself over the air."
+          price="R 1 499 · includes 3 senses"
+        />
+
+        <ProductRow
+          flip
+          img="family.jpg"
+          imgAlt="The Fulnex sense family"
+          fallback={<div className="flex items-end gap-8"><PuckMark size={84} /><PuckMark size={64} /><DoorMark width={100} /></div>}
+          eyebrow="The senses · many, everywhere"
+          title="Stick-anywhere Senses"
+          body="Coin-battery pucks: climate, leak, door, motion, level. Peel, stick, and the hub finds each one in seconds — a year or more per battery, no wires, no tools, no app."
+          price="R 99 – R 199 each"
+        />
+
+        <ProductRow
+          img="switch.jpg"
+          imgAlt="The Fulnex Geyser Switch"
+          fallback={<SwitchMark size={170} />}
+          eyebrow="The muscle · the big jobs"
+          title="Geyser Switch"
+          body="Installed once by an electrician, then it heats water intelligently and around load-shedding — cutting 10–20% off the electricity bill. The device that pays for the whole system."
+          price="R 799 · electrician installed"
+        />
+      </section>
+
+      {/* APPLIANCES */}
       <section className="mx-auto max-w-5xl px-5 py-24 sm:py-32">
         <Reveal>
+          <div className="text-[11px] font-mono uppercase tracking-[0.25em] text-brassdim text-center mb-3">
+            Flagship appliances · made to order
+          </div>
           <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight text-center mb-4">
-            One brain. Many senses.
+            Machines with the brain built in.
           </h2>
           <p className="text-mute text-lg text-center max-w-xl mx-auto mb-16">
-            The Hub plugs in and listens. Coin-battery senses stick anywhere —
-            no wires, no tools, a year per battery. The Geyser Switch does the heavy lifting.
+            Full Fulnex Hubs wearing furniture — same platform, same app, same
+            over-the-air updates. Built one at a time. Twelve months of Plus included.
           </p>
         </Reveal>
-        <div className="grid sm:grid-cols-3 gap-6 items-end text-center">
-          <Reveal delay={0.05} className="card p-8 flex flex-col items-center gap-6">
-            <PuckMark size={92} />
-            <div>
-              <div className="font-medium mb-1">Senses</div>
-              <p className="text-mute text-sm">Climate · Leak · Door · Motion · Level. Peel, stick, done. From R99.</p>
+        <div className="grid md:grid-cols-2 gap-6">
+          <Reveal className="card card-hover overflow-hidden">
+            <div className="aspect-[4/3] bg-panel flex items-center justify-center overflow-hidden">
+              <RenderImg name="biltong.jpg" alt="The Fulnex Biltong cabinet" fallback={
+                <div className="text-center p-10">
+                  <div className="text-5xl mb-4">🥩</div>
+                  <div className="font-display tracking-[0.2em] text-sm text-mute">FULNEX BILTONG</div>
+                </div>
+              } />
+            </div>
+            <div className="p-6">
+              <h3 className="text-xl font-semibold mb-2">Fulnex Biltong</h3>
+              <p className="text-mute text-sm leading-relaxed mb-4">
+                A smart drying cabinet that holds a humidity target instead of a guess —
+                fans automated, door guarded, the whole cure charted, watched from anywhere.
+              </p>
+              <div className="font-mono text-brass text-sm">R 6 995 · founder price R 5 495</div>
             </div>
           </Reveal>
-          <Reveal delay={0.15} className="card p-8 flex flex-col items-center gap-6 sm:-translate-y-4">
-            <DeviceMark size={150} />
-            <div>
-              <div className="font-medium mb-1">The Hub</div>
-              <p className="text-mute text-sm">Battery inside — it reports the power failure. Siren, Wi-Fi, Bluetooth ears. R999.</p>
+          <Reveal delay={0.1} className="card card-hover overflow-hidden">
+            <div className="aspect-[4/3] bg-panel flex items-center justify-center overflow-hidden">
+              <RenderImg name="grow.jpg" alt="The Fulnex Grow cabinet" fallback={
+                <div className="text-center p-10">
+                  <div className="text-5xl mb-4">🌱</div>
+                  <div className="font-display tracking-[0.2em] text-sm text-mute">FULNEX GROW</div>
+                </div>
+              } />
+            </div>
+            <div className="p-6">
+              <h3 className="text-xl font-semibold mb-2">Fulnex Grow</h3>
+              <p className="text-mute text-sm leading-relaxed mb-4">
+                An insulated kitchen garden with twin soil beds, its own water tank and grow
+                lights — it waters itself, minds its climate, and survives load-shedding.
+              </p>
+              <div className="font-mono text-brass text-sm">R 12 995 · founder price R 9 995</div>
             </div>
           </Reveal>
-          <Reveal delay={0.25} className="card p-8 flex flex-col items-center gap-6">
-            <div className="flex flex-col items-center gap-5">
-              <SwitchMark size={120} />
-              <DoorMark width={92} />
-            </div>
-            <div>
-              <div className="font-medium mb-1">The muscle</div>
-              <p className="text-mute text-sm">The Geyser Switch pays the bills. Door senses guard the way in. R99–R799.</p>
-            </div>
-          </Reveal>
-        </div>
-        <div className="grid sm:grid-cols-3 gap-4 mt-10">
-          <RenderImg name="hub.jpg" alt="The Fulnex Hub" className="w-full h-56" />
-          <RenderImg name="family.jpg" alt="The Fulnex family" className="w-full h-56" />
-          <RenderImg name="kit.jpg" alt="The Fulnex Home Kit" className="w-full h-56" />
         </div>
       </section>
 
@@ -220,11 +304,11 @@ export default function Landing() {
       {/* PRICING */}
       <section className="mx-auto max-w-4xl px-5 py-24 sm:py-32">
         <Reveal className="card p-8 sm:p-12 text-center">
-          <div className="font-display tracking-[0.2em] text-sm text-mute mb-6">FULNEX HOME KIT</div>
+          <div className="font-display tracking-[0.2em] text-sm text-mute mb-6">FULNEX HUB</div>
           <div className="text-5xl sm:text-6xl font-semibold tracking-tight mb-2 tabular-nums">R 1 499</div>
           <p className="text-mute mb-8">
-            Hub + three senses. Then R49/month for unlimited alerts on WhatsApp —
-            or stay on the free tier forever.
+            The Hub with three senses included. Then R49/month for unlimited alerts
+            on WhatsApp — or stay on the free tier forever.
           </p>
           <div className="grid sm:grid-cols-2 gap-4 max-w-lg mx-auto mb-10 text-left">
             <div className="border border-line rounded-xl px-5 py-4">
