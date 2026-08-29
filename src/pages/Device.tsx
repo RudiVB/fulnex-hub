@@ -83,6 +83,24 @@ export default function DevicePage() {
           />
           <button className="text-sm border border-line rounded-lg px-3 hover:border-brassdim">Save</button>
         </form>
+        <div className="flex items-center gap-3 mt-4">
+          <button
+            onClick={async () => {
+              await supabase.from("devices").update({ led_on: !device.led_on }).eq("id", device.id);
+              load();
+            }}
+            className={`text-sm rounded-lg px-4 py-1.5 border transition-colors ${
+              device.led_on
+                ? "bg-brass text-ground border-brass font-medium"
+                : "border-line text-mute hover:border-brassdim"
+            }`}
+          >
+            {device.led_on ? "LED is ON" : "LED is OFF"}
+          </button>
+          <span className="text-faint text-xs">
+            applies on the device's next report (≤ 1 min)
+          </span>
+        </div>
       </div>
 
       {portNos.length === 0 ? (

@@ -51,7 +51,7 @@ Deno.serve(async (req) => {
 
   const { data: device } = await supabase
     .from("devices")
-    .select("id, key_hash")
+    .select("id, key_hash, led_on")
     .eq("serial", serial)
     .maybeSingle();
 
@@ -103,5 +103,10 @@ Deno.serve(async (req) => {
     ...(typeof body.fw === "string" ? { fw_version: body.fw } : {}),
   }).eq("id", device.id);
 
-  return Response.json({ ok: true, accepted: rows.length, interval: 60 });
+  return Response.json({
+    ok: true,
+    accepted: rows.length,
+    interval: 60,
+    led: device.led_on === true,
+  });
 });

@@ -19,6 +19,7 @@ export type Device = {
   last_seen: string | null;
   wifi_rssi: number | null;
   battery_pct: number | null;
+  led_on: boolean;
 };
 
 export type Port = {

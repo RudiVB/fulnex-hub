@@ -25,6 +25,14 @@
 
 // HY-SRF05 ultrasonic distance (tank level) -> "port 3", value in cm
 #define ENABLE_ULTRASONIC 0
-#define ULTRA_TRIG_PIN    25   // TRIG -> GPIO25
-#define ULTRA_ECHO_PIN    26   // ECHO -> GPIO26 (5V module: use a divider
+#define ULTRA_TRIG_PIN    26   // TRIG -> GPIO26
+#define ULTRA_ECHO_PIN    35   // ECHO -> GPIO35 (5V module: use a divider
                                // 1k/2k to drop ECHO to 3.3V, or run at 3V3)
+
+// Test bench: pot + switch + remotely-controlled LED.
+// Pot wiper -> GPIO34 ("port 4", %), switch -> GPIO27 to GND ("port 5",
+// 1 = closed), LED + resistor on GPIO25 — toggled from the website.
+#define ENABLE_TEST_BENCH 0
+#define POT_PIN           34
+#define SWITCH_PIN        27
+#define EXT_LED_PIN       25

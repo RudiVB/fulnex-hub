@@ -80,6 +80,20 @@ String buildPayload() {
   }
 #endif
 
+#if ENABLE_TEST_BENCH
+  {
+    long sum = 0;
+    for (int i = 0; i < 4; i++) { sum += analogRead(POT_PIN); delay(2); }
+    float pct = (sum / 4.0f) * 100.0f / 4095.0f;
+    if (!first) json += ",";
+    json += "{\"port\":4,\"value\":" + String(pct, 1) + ",\"kind\":\"analog\"}";
+    json += ",{\"port\":5,\"value\":" +
+            String(digitalRead(SWITCH_PIN) == LOW ? 1 : 0) +
+            ",\"kind\":\"contact\"}";
+    first = false;
+  }
+#endif
+
 #if ENABLE_ULTRASONIC
   {
     pinMode(ULTRA_TRIG_PIN, OUTPUT);
@@ -131,6 +145,12 @@ void report() {
       long secs = body.substring(idx + 11).toInt();
       if (secs >= 10 && secs <= 3600) intervalMs = secs * 1000UL;
     }
+
+#if ENABLE_TEST_BENCH
+    // remote control: the server replies {"led":true/false}
+    if (body.indexOf("\"led\":true") >= 0)  digitalWrite(EXT_LED_PIN, HIGH);
+    if (body.indexOf("\"led\":false") >= 0) digitalWrite(EXT_LED_PIN, LOW);
+#endif
   } else if (status == 401) {
     unauthorized = true;  // wrong serial/key — fast blink, no reboot spiral
   } else {
@@ -150,6 +170,12 @@ void setup() {
   probes.begin();
   Serial.printf("[fulnex] %s fw %s, %d probe(s) found\n",
                 DEVICE_SERIAL, FIRMWARE_VERSION, probes.getDeviceCount());
+
+#if ENABLE_TEST_BENCH
+  pinMode(SWITCH_PIN, INPUT_PULLUP);
+  pinMode(EXT_LED_PIN, OUTPUT);
+  digitalWrite(EXT_LED_PIN, LOW);
+#endif
 
   // Wi-Fi: connects with saved credentials, or opens the setup portal
   WiFiManager wm;
