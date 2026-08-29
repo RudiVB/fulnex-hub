@@ -1,4 +1,4 @@
-// ============================================================
+﻿// ============================================================
 //  FULNEX firmware — per-device configuration
 //
 //  Identity: unique per unit. The serial + claim code go on the
@@ -10,7 +10,7 @@
 #define DEVICE_KEY       "olof-first-device-key-8c31"
 #define CLAIM_CODE       "OLOF01"           // shown on the setup portal
 #define MQTT_SECRET      "flx2-9k2m4vq7x"   // instant-command topic secret
-#define FIRMWARE_VERSION "1.1.2"
+#define FIRMWARE_VERSION "1.2.0"
 
 // Platform
 #define INGEST_URL "https://esqtrcxaozymslwpeqgu.supabase.co/functions/v1/ingest"
@@ -49,8 +49,15 @@
 // PIR motion sensor OUT -> port 6. Event-driven.
 #define MOTION_PIN      -1    // e.g. 39
 
+// DHT22 combined temp + humidity (biltong / grow cabinets)
+// -> port 8 (°C) + port 9 (%RH). Needs "DHT sensor library".
+#define DHT_PIN         -1    // e.g. 15
+
 // Soil moisture (analog AOUT) -> port 10, %
 #define SOIL_PIN        -1    // e.g. 33
+
+// Second soil bed (grow cabinet) -> port 12, %
+#define SOIL2_PIN       -1    // e.g. 4
 
 // HY-SRF05 / SR04 ultrasonic level -> port 11, cm
 // (5V module: divide ECHO down to 3.3V, e.g. 1k/2k)

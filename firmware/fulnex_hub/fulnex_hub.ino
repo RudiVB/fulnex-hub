@@ -40,6 +40,11 @@
 #include <NimBLEDevice.h>
 #endif
 
+#if DHT_PIN >= 0
+#include <DHT.h>
+DHT dht(DHT_PIN, DHT22);
+#endif
+
 #if ONEWIRE_PIN >= 0
 OneWire oneWire(ONEWIRE_PIN);
 DallasTemperature probes(&oneWire);
@@ -232,11 +237,28 @@ void readSenses() {
     sentMotion = m;
   }
 #endif
+#if DHT_PIN >= 0
+  if (curCount < 11) {
+    float t = dht.readTemperature();
+    float h = dht.readHumidity();
+    if (!isnan(t)) cur[curCount++] = { 8, t, "temp" };
+    if (!isnan(h)) cur[curCount++] = { 9, h, "humidity" };
+  }
+#endif
+
 #if SOIL_PIN >= 0
   if (curCount < 12) {
     long sum = 0;
     for (int i = 0; i < 8; i++) { sum += analogRead(SOIL_PIN); delay(2); }
     cur[curCount++] = { 10, (float)(100.0f - sum / 8.0f * 100.0f / 4095.0f), "moisture" };
+  }
+#endif
+
+#if SOIL2_PIN >= 0
+  if (curCount < 12) {
+    long sum = 0;
+    for (int i = 0; i < 8; i++) { sum += analogRead(SOIL2_PIN); delay(2); }
+    cur[curCount++] = { 12, (float)(100.0f - sum / 8.0f * 100.0f / 4095.0f), "moisture" };
   }
 #endif
 #if ULTRA_TRIG_PIN >= 0 && ULTRA_ECHO_PIN >= 0
@@ -478,6 +500,9 @@ void setup() {
                 DEVICE_SERIAL, FIRMWARE_VERSION, probes.getDeviceCount());
 #else
   Serial.printf("[fulnex] %s fw %s\n", DEVICE_SERIAL, FIRMWARE_VERSION);
+#endif
+#if DHT_PIN >= 0
+  dht.begin();
 #endif
 
 #if CONTACT_PIN >= 0
