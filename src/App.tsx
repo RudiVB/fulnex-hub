@@ -42,7 +42,10 @@ export default function App() {
     <div className="min-h-screen">
       <header className="border-b border-line">
         <div className="mx-auto max-w-4xl px-5 h-14 flex items-center justify-between">
-          <Link to="/" className="font-display tracking-widest text-sm">FULNEX</Link>
+          <Link to="/" className="font-display tracking-widest text-sm inline-flex items-center gap-2.5">
+            <span className="w-2 h-2 rounded-full bg-brass shadow-[0_0_8px_rgba(201,164,76,.7)]" />
+            FULNEX
+          </Link>
           {!session && (
             <nav className="flex items-center gap-5 text-sm">
               <Link to="/setup" className="text-mute hover:text-ink">Device setup</Link>
@@ -66,7 +69,7 @@ export default function App() {
           )}
         </div>
       </header>
-      <main className="mx-auto max-w-4xl px-5 py-8">
+      <main className="mx-auto max-w-4xl px-5 py-8 min-h-[calc(100vh-8.5rem)]">
         <Routes>
           <Route path="/login" element={session ? <Navigate to="/" /> : <Login />} />
           <Route path="/" element={session ? <Devices /> : <Navigate to="/login" />} />
@@ -77,6 +80,12 @@ export default function App() {
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </main>
+      <footer className="border-t border-line">
+        <div className="mx-auto max-w-4xl px-5 py-5 flex items-center justify-between text-xs font-mono text-faint tracking-wide">
+          <span>FULNEX · your things, watched</span>
+          <span>alpha</span>
+        </div>
+      </footer>
     </div>
   );
 }

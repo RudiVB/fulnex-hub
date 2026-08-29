@@ -15,6 +15,7 @@ export type Device = {
   serial: string;
   name: string | null;
   role: string;
+  owner: string | null;
   fw_version: string | null;
   last_seen: string | null;
   wifi_rssi: number | null;
@@ -49,4 +50,25 @@ export type AlertRule = {
 export function isOnline(d: Device): boolean {
   if (!d.last_seen) return false;
   return Date.now() - new Date(d.last_seen).getTime() < 5 * 60 * 1000;
+}
+
+export function timeAgo(iso: string | null): string {
+  if (!iso) return "never";
+  const s = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 1000));
+  if (s < 60) return `${s}s ago`;
+  if (s < 3600) return `${Math.floor(s / 60)}m ago`;
+  if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
+  return `${Math.floor(s / 86400)}d ago`;
+}
+
+export function formatReading(kind: string | null, value: number): string {
+  switch (kind) {
+    case "temp": return `${value.toFixed(1)} °C`;
+    case "humidity": return `${value.toFixed(0)} %`;
+    case "moisture": return `${value.toFixed(0)} %`;
+    case "analog": return `${value.toFixed(0)} %`;
+    case "level": return `${value.toFixed(0)} cm`;
+    case "contact": return value >= 0.5 ? "CLOSED" : "OPEN";
+    default: return value.toFixed(1);
+  }
 }

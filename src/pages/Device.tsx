@@ -4,7 +4,7 @@ import {
   CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from "recharts";
 import {
-  AlertRule, Device, Port, Reading, isOnline, supabase,
+  AlertRule, Device, Port, Reading, formatReading, isOnline, supabase, timeAgo,
 } from "../lib/supabase";
 
 export default function DevicePage() {
@@ -14,6 +14,11 @@ export default function DevicePage() {
   const [readings, setReadings] = useState<Reading[]>([]);
   const [rules, setRules] = useState<AlertRule[]>([]);
   const [name, setName] = useState("");
+  const [uid, setUid] = useState("");
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setUid(data.user?.id ?? ""));
+  }, []);
 
   const load = useCallback(async () => {
     if (!id) return;
@@ -69,7 +74,7 @@ export default function DevicePage() {
           </span>
         </div>
         <p className="text-faint text-xs font-mono">
-          {device.serial} · {device.role}
+          {device.serial} · {device.role} · seen {timeAgo(device.last_seen)}
           {device.fw_version ? ` · fw ${device.fw_version}` : ""}
           {typeof device.wifi_rssi === "number" ? ` · ${device.wifi_rssi} dBm` : ""}
           {typeof device.battery_pct === "number" ? ` · battery ${device.battery_pct}%` : ""}
@@ -146,7 +151,11 @@ export default function DevicePage() {
                       }}
                     />
                   )}
-                  {latest && <span className="font-mono text-brass text-lg">{latest.value.toFixed(1)}</span>}
+                  {latest && (
+                    <span className="font-mono text-brass text-lg">
+                      {formatReading(port?.kind ?? null, latest.value)}
+                    </span>
+                  )}
                 </span>
               </div>
               <div className="h-48">
@@ -169,6 +178,63 @@ export default function DevicePage() {
       )}
 
       <RulesCard deviceId={device.id} rules={rules} portNos={portNos} onChange={load} />
+
+      {uid && device.owner === uid && <ShareCard deviceId={device.id} />}
+    </div>
+  );
+}
+
+function ShareCard(props: { deviceId: string }) {
+  const [email, setEmail] = useState("");
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  async function share(e: FormEvent) {
+    e.preventDefault();
+    setMsg(null);
+    setBusy(true);
+    const { data, error } = await supabase.rpc("share_device", {
+      p_device_id: props.deviceId,
+      p_email: email,
+    });
+    setBusy(false);
+    if (error) {
+      setMsg({ ok: false, text: error.message });
+      return;
+    }
+    const result = data as { ok: boolean; error?: string };
+    if (!result.ok) setMsg({ ok: false, text: result.error ?? "could not share" });
+    else {
+      setMsg({ ok: true, text: `Shared — ${email} now sees this device.` });
+      setEmail("");
+    }
+  }
+
+  return (
+    <div className="bg-panel border border-line rounded-xl p-5">
+      <h2 className="font-medium mb-1">Share this device</h2>
+      <p className="text-mute text-sm mb-4">
+        Give another Fulnex account live access — readings, charts, and controls.
+      </p>
+      <form onSubmit={share} className="flex flex-wrap gap-3">
+        <input
+          type="email"
+          required
+          placeholder="their@email.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="flex-1 min-w-[220px] bg-ground border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brass"
+        />
+        <button
+          disabled={busy}
+          className="bg-brass text-ground font-medium rounded-lg px-5 py-2 text-sm hover:opacity-90 disabled:opacity-50"
+        >
+          {busy ? "…" : "Share"}
+        </button>
+      </form>
+      {msg && (
+        <p className={`text-sm mt-3 ${msg.ok ? "text-ok" : "text-danger"}`}>{msg.text}</p>
+      )}
     </div>
   );
 }
