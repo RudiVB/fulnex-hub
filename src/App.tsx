@@ -13,6 +13,7 @@ import DevicePage from "./pages/Device";
 import Claim from "./pages/Claim";
 import Setup from "./pages/Setup";
 import Notifications from "./pages/Notifications";
+import Admin from "./pages/Admin";
 import { Bell } from "lucide-react";
 
 function Page({ children }: { children: React.ReactNode }) {
@@ -46,6 +47,7 @@ function NavItem({ to, label }: { to: string; label: string }) {
 export default function App() {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -57,6 +59,16 @@ export default function App() {
     const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => setSession(s));
     return () => sub.subscription.unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (!session) { setIsAdmin(false); return; }
+    supabase
+      .from("profiles")
+      .select("is_admin")
+      .eq("id", session.user.id)
+      .maybeSingle()
+      .then(({ data }) => setIsAdmin(data?.is_admin === true));
+  }, [session]);
 
   if (!configured) {
     return (
@@ -115,6 +127,7 @@ export default function App() {
                 <NavItem to="/" label="Monitor" />
                 <NavItem to="/setup" label="Setup" />
                 <NavItem to="/claim" label="Claim" />
+                {isAdmin && <NavItem to="/admin" label="Admin" />}
                 <Link
                   to="/notifications"
                   title="Notifications"
@@ -154,6 +167,7 @@ export default function App() {
                 <Route path="/claim/:serial" element={session ? <Page><Claim /></Page> : <Navigate to="/login" />} />
                 <Route path="/setup" element={<Page><Setup /></Page>} />
                 <Route path="/notifications" element={session ? <Page><Notifications /></Page> : <Navigate to="/login" />} />
+                <Route path="/admin" element={session ? <Page><Admin /></Page> : <Navigate to="/login" />} />
                 <Route path="*" element={<Navigate to="/" />} />
               </Routes>
             </motion.div>
