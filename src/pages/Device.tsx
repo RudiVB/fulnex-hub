@@ -89,6 +89,7 @@ export default function DevicePage() {
         ...(typeof d.cl_t_hi === "number" ? { cl_t_hi: d.cl_t_hi } : {}),
         ...(typeof d.cl_air_on === "number" ? { cl_air_on: d.cl_air_on } : {}),
         ...(typeof d.cl_air_rest === "number" ? { cl_air_rest: d.cl_air_rest } : {}),
+        ...(typeof d.pm === "string" && d.pm ? { pm: d.pm } : {}),
         ...overrides,
       };
       c.publish(
@@ -515,8 +516,68 @@ export default function DevicePage() {
             </div>
           )}
           <OtaCard device={device} publish={publishInstant} onChange={load} />
+          <PortsCard device={device} publish={publishInstant} onChange={load} />
           {uid && device.owner === uid && <ShareCard deviceId={device.id} />}
         </div>
+      </div>
+    </div>
+  );
+}
+
+// Runtime port map (fw 2.0+): what's wired to which GPIO. The
+// device stores the map in flash and reboots into the new wiring.
+function PortsCard({ device, publish, onChange }: {
+  device: Device;
+  publish: (o: Record<string, unknown>) => void;
+  onChange: () => void;
+}) {
+  const desired = (device.desired ?? {}) as Record<string, unknown>;
+  const [pm, setPm] = useState<string>((desired.pm as string) ?? "");
+  const [saved, setSaved] = useState<string | null>(null);
+  const fw2 = (device.fw_version ?? "").startsWith("2");
+
+  async function save() {
+    const clean = pm.trim();
+    publish({ pm: clean });
+    await supabase.rpc("patch_desired", { p_device_id: device.id, p_patch: { pm: clean } });
+    setSaved("sent — the device saves it and reboots into the new wiring");
+    setTimeout(() => setSaved(null), 4000);
+    onChange();
+  }
+
+  return (
+    <div className="card p-5">
+      <div className="flex items-baseline justify-between mb-1">
+        <h2 className="font-medium">Ports</h2>
+        <span className="text-faint text-[11px] font-mono">
+          {fw2 ? "advanced · reboots on change" : "needs firmware 2.0"}
+        </span>
+      </div>
+      <p className="text-mute text-sm mb-3">
+        What's wired where. Tokens <span className="font-mono text-ink">key=pin</span>, comma
+        separated; flag <span className="font-mono text-ink">L</span> = relay active-low,{" "}
+        <span className="font-mono text-ink">P</span> = dimmable (o1 only).
+      </p>
+      <input
+        value={pm}
+        onChange={(e) => setPm(e.target.value)}
+        placeholder="ow=32,dht=5,ct=4,o1=22L,o2=21L,o3=19L"
+        disabled={!fw2}
+        className="w-full bg-ground border border-line rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:border-brass disabled:opacity-50 mb-2"
+      />
+      <p className="text-faint text-[11px] font-mono mb-3">
+        ow temp-bus · pot dial · ct door · mot motion · dht climate · soil/soil2 ·
+        ut+ue level · vb mains · o1 o2 o3 outputs · buz buzzer
+      </p>
+      <div className="flex items-center gap-3">
+        <button
+          onClick={save}
+          disabled={!fw2 || !pm.trim()}
+          className="btn-brass font-medium rounded-lg px-4 py-1.5 text-sm disabled:opacity-50"
+        >
+          Apply wiring
+        </button>
+        {saved && <span className="text-ok text-xs font-mono">{saved}</span>}
       </div>
     </div>
   );

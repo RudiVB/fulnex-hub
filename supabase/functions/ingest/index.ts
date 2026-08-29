@@ -241,6 +241,8 @@ Deno.serve(async (req) => {
     reply.pulse_ms = Math.min(2000, Math.max(50, num(d.pulse_ms) ?? 500));
   }
   reply.recipe = d.recipe === true;
+  // runtime port map (fw 2.0+): device stores it in NVS and reboots on change
+  if (typeof d.pm === "string" && d.pm.length > 0 && d.pm.length < 200) reply.pm = d.pm;
   // climate autopilot: the device runs these on its own hardware
   reply.cl_en = d.cl_en === true;
   const clim = (k: string, lo: number, hi: number) => {

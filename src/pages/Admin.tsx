@@ -484,11 +484,11 @@ function ProvisionCard({ products, onChange }: { products: Product[]; onChange: 
     w.document.close();
   }
 
-  const snippet = minted ? `// FULNEX config — ${minted.serial}${minted.product_name ? ` (${minted.product_name})` : ""}
-#define DEVICE_SERIAL    "${minted.serial}"
-#define DEVICE_KEY       "${minted.device_key}"
-#define CLAIM_CODE       "${minted.claim_code}"
-#define MQTT_SECRET      "${minted.mqtt_secret}"` : "";
+  // fw 2.0 flow: flash the GENERIC binary once, then paste this
+  // one line into the serial monitor — identity lands in NVS
+  const snippet = minted
+    ? `FULNEX-PROVISION serial=${minted.serial} key=${minted.device_key} claim=${minted.claim_code} mqtt=${minted.mqtt_secret}`
+    : "";
 
   return (
     <FadeUp className="card p-5">
@@ -535,12 +535,13 @@ function ProvisionCard({ products, onChange }: { products: Product[]; onChange: 
           </div>
           <div>
             <div className="text-[10px] font-mono uppercase tracking-widest text-faint mb-1.5">
-              credentials — shown once, stored hashed
+              provisioning line — flash the generic 2.0 binary, paste this into the
+              serial monitor, done. Shown once, stored hashed.
             </div>
-            <pre className="text-xs font-mono text-mute bg-ground border border-line rounded-lg p-3 overflow-x-auto whitespace-pre">{snippet}</pre>
+            <pre className="text-xs font-mono text-mute bg-ground border border-line rounded-lg p-3 overflow-x-auto whitespace-pre-wrap break-all">{snippet}</pre>
             <button onClick={() => navigator.clipboard.writeText(snippet)}
               className="mt-2 text-xs font-mono border border-line rounded-lg px-3 py-1.5 text-mute hover:border-brassdim hover:text-ink">
-              Copy config block
+              Copy provisioning line
             </button>
           </div>
         </div>
