@@ -86,9 +86,19 @@ export default function DevicePage() {
       </div>
 
       {portNos.length === 0 ? (
-        <div className="bg-panel border border-line rounded-xl p-8 text-center text-mute">
-          No readings in the last 24 hours yet. Plug a sensor in — the moment the
-          device reports, its chart appears here.
+        <div className="bg-panel border border-line rounded-xl p-8 text-center">
+          <div className="inline-flex items-center gap-2 text-brass font-mono text-xs mb-3">
+            <span className="w-2 h-2 rounded-full bg-brass animate-pulse" />
+            listening — this page checks every 30 seconds
+          </div>
+          <p className="text-mute max-w-md mx-auto">
+            {online
+              ? "Your device is online and will report within a minute. The moment a reading arrives, its chart appears right here."
+              : "Waiting for your device's first report. Power it up and check the LED: solid means online, double-flash means it just spoke to the cloud, fast blink means the serial/key don't match."}
+          </p>
+          <p className="text-faint text-sm mt-3">
+            Need the firmware or wiring? <a href="/setup" className="text-brass hover:underline">Device setup</a>
+          </p>
         </div>
       ) : (
         portNos.map((portNo) => {

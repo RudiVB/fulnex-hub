@@ -71,6 +71,9 @@ export default function Login() {
           {mode === "signin" ? "New here? Create an account" : "Have an account? Sign in"}
         </button>
       </form>
+      <p className="text-center text-faint text-sm mt-6">
+        Setting up a device? <a href="/setup" className="text-brass hover:underline">Start here</a>
+      </p>
     </div>
   );
 }

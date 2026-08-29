@@ -6,6 +6,7 @@ import Login from "./pages/Login";
 import Devices from "./pages/Devices";
 import DevicePage from "./pages/Device";
 import Claim from "./pages/Claim";
+import Setup from "./pages/Setup";
 
 export default function App() {
   const [session, setSession] = useState<Session | null>(null);
@@ -42,9 +43,15 @@ export default function App() {
       <header className="border-b border-line">
         <div className="mx-auto max-w-4xl px-5 h-14 flex items-center justify-between">
           <Link to="/" className="font-display tracking-widest text-sm">FULNEX</Link>
+          {!session && (
+            <nav className="flex items-center gap-5 text-sm">
+              <Link to="/setup" className="text-mute hover:text-ink">Device setup</Link>
+            </nav>
+          )}
           {session && (
             <nav className="flex items-center gap-5 text-sm">
               <Link to="/" className="text-mute hover:text-ink">Devices</Link>
+              <Link to="/setup" className="text-mute hover:text-ink">Setup</Link>
               <Link to="/claim" className="text-mute hover:text-ink">Claim a device</Link>
               <button
                 className="text-faint hover:text-ink"
@@ -66,6 +73,7 @@ export default function App() {
           <Route path="/device/:id" element={session ? <DevicePage /> : <Navigate to="/login" />} />
           <Route path="/claim" element={session ? <Claim /> : <Navigate to="/login" />} />
           <Route path="/claim/:serial" element={session ? <Claim /> : <Navigate to="/login" />} />
+          <Route path="/setup" element={<Setup />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </main>
