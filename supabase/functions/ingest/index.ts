@@ -51,7 +51,7 @@ Deno.serve(async (req) => {
 
   const { data: device } = await supabase
     .from("devices")
-    .select("id, key_hash, led_on, desired")
+    .select("id, key_hash, led_on, desired, name, owner")
     .eq("serial", serial)
     .maybeSingle();
 
@@ -93,6 +93,121 @@ Deno.serve(async (req) => {
     }));
     if (portRows.length > 0) {
       await supabase.from("ports").upsert(portRows, { onConflict: "device_id,port_no" });
+    }
+
+    // ---- state-change notifications --------------------------------
+    // Ports that represent a state (door, mains, outputs) get compared
+    // to the value they held last report; a flip becomes a push
+    // notification with the cabinet's current climate as context.
+    try {
+      const STATE_PORTS = [5, 20, 21, 22, 23];
+      const latestIn = new Map<number, number>();
+      for (const r of Array.isArray(body.readings) ? body.readings : []) {
+        if (Number.isInteger(r?.port) && Number.isFinite(r?.value)) {
+          latestIn.set(r.port, r.value);       // last occurrence wins
+        }
+      }
+      const { data: known } = await supabase
+        .from("ports")
+        .select("port_no, label, last_value")
+        .eq("device_id", device.id)
+        .in("port_no", STATE_PORTS);
+
+      const desired = (device.desired ?? {}) as Record<string, unknown>;
+      const dname = device.name || serial;
+      const hum = latestIn.get(9);
+      const temp = latestIn.get(8);
+      const context =
+        (typeof hum === "number" ? ` · ${Math.round(hum)} %RH` : "") +
+        (typeof temp === "number" ? ` · ${temp.toFixed(1)} °C` : "");
+
+      const changes: { body: string; category: string }[] = [];
+      for (const p of known ?? []) {
+        const incoming = latestIn.get(p.port_no);
+        if (typeof incoming !== "number") continue;
+        const prev = p.last_value;
+        if (typeof prev !== "number") continue;    // first sighting = baseline only
+        const flipped = p.port_no === 21
+          ? (prev > 0) !== (incoming > 0)
+          : Math.round(prev) !== Math.round(incoming);
+        if (!flipped) continue;
+
+        if (p.port_no === 5) {
+          changes.push({
+            body: `${p.label || "Door"} ${incoming >= 0.5 ? "closed" : "OPEN"}${context}`,
+            category: "door",
+          });
+        } else if (p.port_no === 20) {
+          changes.push({
+            body: `${p.label || "Mains power"} ${incoming >= 0.5 ? "restored" : "LOST"}`,
+            category: "alerts",
+          });
+        } else {
+          const n = p.port_no - 20;               // 21→1, 22→2, 23→3
+          const label = p.label ||
+            (desired[`out${n}_label`] as string) || `Output ${n}`;
+          const state = p.port_no === 21
+            ? (incoming > 0 ? (incoming >= 100 ? "ON" : `${Math.round(incoming)}%`) : "OFF")
+            : (incoming >= 0.5 ? "ON" : "OFF");
+          changes.push({ body: `${label} ${state}${context}`, category: "autopilot" });
+        }
+      }
+
+      // move the baseline for every state port we saw this report
+      const baseline = STATE_PORTS
+        .filter((p) => latestIn.has(p))
+        .map((port_no) => ({ device_id: device.id, port_no, last_value: latestIn.get(port_no) }));
+      if (baseline.length > 0) {
+        await supabase.from("ports").upsert(baseline, { onConflict: "device_id,port_no" });
+      }
+
+      if (changes.length > 0) {
+        // audience: owner + shared members, each honouring their switches
+        const { data: members } = await supabase
+          .from("device_members")
+          .select("user_id")
+          .eq("device_id", device.id);
+        const audience = [...new Set(
+          [device.owner, ...(members ?? []).map((m) => m.user_id)].filter(Boolean),
+        )] as string[];
+        if (audience.length > 0) {
+          const { data: profs } = await supabase
+            .from("profiles")
+            .select("id, notify_prefs")
+            .in("id", audience);
+          const queueRows: Record<string, unknown>[] = [];
+          for (const uid of audience) {
+            const prefs = (profs?.find((p) => p.id === uid)?.notify_prefs ?? {}) as Record<string, unknown>;
+            for (const c of changes) {
+              if (prefs[c.category] === false) continue;
+              queueRows.push({
+                user_id: uid,
+                title: dname,
+                body: c.body,
+                url: `/device/${device.id}`,
+                category: c.category,
+              });
+            }
+          }
+          if (queueRows.length > 0) {
+            await supabase.from("notification_queue").insert(queueRows);
+            // poke the deliverer so the phone buzzes in seconds, not minutes
+            const poke = fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/notify`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "x-notify-key": Deno.env.get("NOTIFY_KEY") ?? "",
+              },
+              body: "{}",
+            }).catch(() => {});
+            // deliver after this response returns — the device isn't kept waiting
+            (globalThis as { EdgeRuntime?: { waitUntil(p: Promise<unknown>): void } })
+              .EdgeRuntime?.waitUntil(poke);
+          }
+        }
+      }
+    } catch (err) {
+      console.error("state-change notify failed:", err);   // never block ingest
     }
   }
 

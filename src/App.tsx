@@ -12,6 +12,8 @@ import Devices from "./pages/Devices";
 import DevicePage from "./pages/Device";
 import Claim from "./pages/Claim";
 import Setup from "./pages/Setup";
+import Notifications from "./pages/Notifications";
+import { Bell } from "lucide-react";
 
 function Page({ children }: { children: React.ReactNode }) {
   return (
@@ -113,6 +115,15 @@ export default function App() {
                 <NavItem to="/" label="Monitor" />
                 <NavItem to="/setup" label="Setup" />
                 <NavItem to="/claim" label="Claim" />
+                <Link
+                  to="/notifications"
+                  title="Notifications"
+                  className={`relative py-1 transition-colors ${
+                    location.pathname.startsWith("/notifications") ? "text-ink" : "text-mute hover:text-ink"
+                  }`}
+                >
+                  <Bell size={16} strokeWidth={1.75} />
+                </Link>
                 <button
                   className="text-faint hover:text-ink transition-colors"
                   onClick={async () => {
@@ -142,6 +153,7 @@ export default function App() {
                 <Route path="/claim" element={session ? <Page><Claim /></Page> : <Navigate to="/login" />} />
                 <Route path="/claim/:serial" element={session ? <Page><Claim /></Page> : <Navigate to="/login" />} />
                 <Route path="/setup" element={<Page><Setup /></Page>} />
+                <Route path="/notifications" element={session ? <Page><Notifications /></Page> : <Navigate to="/login" />} />
                 <Route path="*" element={<Navigate to="/" />} />
               </Routes>
             </motion.div>
