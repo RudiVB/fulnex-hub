@@ -7,10 +7,17 @@ import type { Session } from "@supabase/supabase-js";
 import { configured, supabase } from "./lib/supabase";
 import { easeOut } from "./components/motion";
 import Login from "./pages/Login";
+import Landing from "./pages/Landing";
 import Devices from "./pages/Devices";
 import DevicePage from "./pages/Device";
 import Claim from "./pages/Claim";
 import Setup from "./pages/Setup";
+
+function Page({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="mx-auto w-full max-w-5xl px-4 sm:px-6 py-6 sm:py-10">{children}</div>
+  );
+}
 
 function NavItem({ to, label }: { to: string; label: string }) {
   const location = useLocation();
@@ -93,6 +100,12 @@ export default function App() {
             {!session && (
               <nav className="flex items-center gap-4 sm:gap-6 text-sm">
                 <NavItem to="/setup" label="Device setup" />
+                <Link
+                  to="/login"
+                  className="border border-line rounded-lg px-4 py-1.5 text-mute hover:text-ink hover:border-brassdim transition-colors"
+                >
+                  Sign in
+                </Link>
               </nav>
             )}
             {session && (
@@ -113,7 +126,7 @@ export default function App() {
             )}
           </div>
         </header>
-        <main className="mx-auto w-full max-w-5xl px-4 sm:px-6 py-6 sm:py-10 flex-1">
+        <main className="flex-1 w-full">
           <AnimatePresence mode="wait">
             <motion.div
               key={location.pathname}
@@ -123,12 +136,12 @@ export default function App() {
               transition={{ duration: 0.35, ease: easeOut }}
             >
               <Routes location={location}>
-                <Route path="/login" element={session ? <Navigate to="/" /> : <Login />} />
-                <Route path="/" element={session ? <Devices /> : <Navigate to="/login" />} />
-                <Route path="/device/:id" element={session ? <DevicePage /> : <Navigate to="/login" />} />
-                <Route path="/claim" element={session ? <Claim /> : <Navigate to="/login" />} />
-                <Route path="/claim/:serial" element={session ? <Claim /> : <Navigate to="/login" />} />
-                <Route path="/setup" element={<Setup />} />
+                <Route path="/login" element={session ? <Navigate to="/" /> : <Page><Login /></Page>} />
+                <Route path="/" element={session ? <Page><Devices /></Page> : <Landing />} />
+                <Route path="/device/:id" element={session ? <Page><DevicePage /></Page> : <Navigate to="/login" />} />
+                <Route path="/claim" element={session ? <Page><Claim /></Page> : <Navigate to="/login" />} />
+                <Route path="/claim/:serial" element={session ? <Page><Claim /></Page> : <Navigate to="/login" />} />
+                <Route path="/setup" element={<Page><Setup /></Page>} />
                 <Route path="*" element={<Navigate to="/" />} />
               </Routes>
             </motion.div>
