@@ -1,5 +1,5 @@
 ﻿// ============================================================
-//  FULNEX firmware â€” per-device configuration
+//  FULNEX firmware — per-device configuration
 //
 //  Identity: unique per unit. The serial + claim code go on the
 //  label; the key lives only here and in the platform (hashed).
@@ -22,7 +22,7 @@
 #define LED_ACTIVE HIGH
 
 // ------------------------------------------------------------
-//  SENSES â€” set a pin to enable, -1 to disable.
+//  SENSES — set a pin to enable, -1 to disable.
 //  Port numbers are fixed per sense so dashboards stay stable.
 // ------------------------------------------------------------
 
@@ -54,11 +54,11 @@
 #define VBUS_SENSE_PIN  -1    // e.g. 36
 
 // ------------------------------------------------------------
-//  OUTPUTS â€” controlled from the site
+//  OUTPUTS — controlled from the site
 // ------------------------------------------------------------
 #define OUT1_PIN        25    // "LED" toggle + brightness slider (PWM)
 #define OUT2_PIN        26    // "Output 2" toggle + Pulse button
-#define BUZZER_PIN      -1    // e.g. 13 â€” site "beep" makes it chirp
+#define BUZZER_PIN      -1    // e.g. 13 — site "beep" makes it chirp
 
 // ------------------------------------------------------------
 //  ROLE
