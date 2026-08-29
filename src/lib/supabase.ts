@@ -22,7 +22,17 @@ export type Device = {
   battery_pct: number | null;
   led_on: boolean;
   desired: Record<string, unknown> | null;
+  uptime_s: number | null;
+  free_heap: number | null;
+  boot_reason: string | null;
+  mqtt_secret: string | null;
 };
+
+export function fmtUptime(s: number): string {
+  if (s < 3600) return `${Math.floor(s / 60)}m`;
+  if (s < 86400) return `${Math.floor(s / 3600)}h ${Math.floor((s % 3600) / 60)}m`;
+  return `${Math.floor(s / 86400)}d ${Math.floor((s % 86400) / 3600)}h`;
+}
 
 export type Port = {
   id: number;

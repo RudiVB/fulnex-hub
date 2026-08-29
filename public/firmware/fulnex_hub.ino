@@ -1,45 +1,55 @@
 // ============================================================
-//  FULNEX firmware v1.0
+//  FULNEX firmware v1.1 — the premium build
 //
-//  One firmware for every Fulnex hub. Enable senses and outputs
-//  in config.h; the platform discovers them by their ports.
+//  Everything in v1.0, plus:
+//   - Instant commands over MQTT (site -> device in ~1 s)
+//   - Cloud OTA: set desired.fw_ver + fw_url and the device
+//     updates itself over HTTPS
+//   - Offline buffer: readings queue in RAM through Wi-Fi/cloud
+//     outages and backfill with true timestamps (NTP)
+//   - Local reflex recipe: contact drives the LED on-device, ms
+//     latency, cloud informed afterwards (desired.recipe)
+//   - Factory reset: hold BOOT 5 s -> Wi-Fi wiped, portal opens
+//   - Telemetry: uptime, free heap, boot reason on every report
+//   - Boot fade hello on the LED output
+//   - Setup portal shows serial + claim code + claim link
+//   - EXPERIMENTAL: BLE scan for Xiaomi ATC pucks (config flag)
 //
-//  SENSES (fixed ports)
-//   1..3  DS18B20 temperature probes     (ONEWIRE_PIN)
-//   4     analog dial / 0-3.3V signal, % (POT_PIN)
-//   5     contact open/closed            (CONTACT_PIN, event-driven)
-//   6     motion                         (MOTION_PIN, event-driven)
-//   10    soil moisture, %               (SOIL_PIN)
-//   11    ultrasonic level, cm           (ULTRA_TRIG/ECHO_PIN)
-//   20    mains power present            (VBUS_SENSE_PIN, event-driven)
+//  Ports: 1-3 temp · 4 analog · 5 contact · 6 motion · 10 soil
+//         11 level · 20 mains power · 30-32 BLE climate (exp.)
 //
-//  CONTROLS (from the site, in the ingest reply)
-//   led + brightness  -> OUT1_PIN (PWM)
-//   led2              -> OUT2_PIN
-//   pulse_id/pulse_ms -> OUT2_PIN momentary (gate pattern)
-//   beep_id           -> BUZZER_PIN chirps (active buzzer)
-//   interval          -> report cadence (10..3600 s)
-//
-//  EVENT-DRIVEN: contact / motion / power changes report within
-//  ~2 seconds, not on the next minute.
-//
-//  Setup portal: FULNEX-branded dark captive portal.
-//  Libraries: WiFiManager (tzapu), OneWire, DallasTemperature.
+//  Libraries: WiFiManager (tzapu), OneWire, DallasTemperature,
+//             PubSubClient (Nick O'Leary).
+//             + NimBLE-Arduino only if ENABLE_BLE_SCAN.
 //  Board: ESP32 Dev Module.
 // ============================================================
 
 #include <WiFi.h>
 #include <WiFiClientSecure.h>
 #include <HTTPClient.h>
+#include <HTTPUpdate.h>
 #include <WiFiManager.h>
 #include <ArduinoOTA.h>
 #include <OneWire.h>
 #include <DallasTemperature.h>
+#include <PubSubClient.h>
+#include <time.h>
 #include "config.h"
+
+#if ENABLE_BLE_SCAN
+#include <NimBLEDevice.h>
+#endif
 
 #if ONEWIRE_PIN >= 0
 OneWire oneWire(ONEWIRE_PIN);
 DallasTemperature probes(&oneWire);
+#endif
+
+#if ENABLE_MQTT
+WiFiClient mqttNet;
+PubSubClient mqtt(mqttNet);
+String cmdTopic = String("fulnex/") + DEVICE_SERIAL + "/" + MQTT_SECRET + "/cmd";
+unsigned long lastMqttTry = 0;
 #endif
 
 unsigned long lastReport = 0;
@@ -48,16 +58,34 @@ int failures = 0;
 bool unauthorized = false;
 long lastPulseId = -1;
 long lastBeepId = -1;
+bool recipeMode = false;
+bool otaInProgress = false;
 
-// last values the server knows, for event detection (-999 = never sent)
-int sentContact = -999;
-int sentMotion = -999;
-int sentPower = -999;
+int sentContact = -999, sentMotion = -999, sentPower = -999;
+int liveContact = -999;
 unsigned long lastEventMs = 0;
+unsigned long bootBtnDownAt = 0;
 
-// ------------------------------------------------------------
-//  FULNEX-branded captive portal
-// ------------------------------------------------------------
+// ---- offline buffer ----------------------------------------
+struct Buffered { time_t epoch; uint8_t port; float value; char kind[10]; };
+#define BUF_MAX 120
+Buffered buf[BUF_MAX];
+int bufCount = 0;
+
+void bufferPush(uint8_t port, float value, const char* kind) {
+  if (bufCount >= BUF_MAX) {              // full: drop oldest
+    memmove(buf, buf + 1, sizeof(Buffered) * (BUF_MAX - 1));
+    bufCount = BUF_MAX - 1;
+  }
+  buf[bufCount].epoch = time(nullptr);
+  buf[bufCount].port = port;
+  buf[bufCount].value = value;
+  strncpy(buf[bufCount].kind, kind, 9);
+  buf[bufCount].kind[9] = 0;
+  bufCount++;
+}
+
+// ---- FULNEX-branded captive portal --------------------------
 const char FULNEX_PORTAL_STYLE[] PROGMEM =
   "<style>"
   "body{background:#08090a;color:#f4f3f0;font-family:'Segoe UI',Roboto,Arial,sans-serif;}"
@@ -71,16 +99,28 @@ const char FULNEX_PORTAL_STYLE[] PROGMEM =
   ".msg{background:#0e0f11;border-left:2px solid #dddcd5;color:#9a9c9e;border-radius:0 8px 8px 0;}"
   ".q{color:#9a9c9e;}"
   "</style>"
-  "<div style='text-align:center;margin:18px 0 2px;font-size:11px;"
-  "letter-spacing:.35em;color:#5e6165'>YOUR THINGS, WATCHED</div>";
+  "<div style='text-align:center;margin:16px 0 2px;font-size:11px;"
+  "letter-spacing:.35em;color:#5e6165'>YOUR THINGS, WATCHED</div>"
+  "<div style='text-align:center;margin:6px 0 0;font-size:12px;color:#9a9c9e'>"
+  "Serial <b style='color:#f4f3f0'>" DEVICE_SERIAL "</b> &middot; "
+  "Claim code <b style='color:#f4f3f0'>" CLAIM_CODE "</b><br>"
+  "<span style='font-size:11px'>After Wi-Fi: claim it at " CLAIM_BASE DEVICE_SERIAL "</span></div>";
 
-// ------------------------------------------------------------
-//  helpers
-// ------------------------------------------------------------
+// ---- helpers ------------------------------------------------
 long numFromBody(const String& body, const char* key, long fallback) {
   int i = body.indexOf(key);
   if (i < 0) return fallback;
   return body.substring(i + strlen(key)).toInt();
+}
+
+String strFromBody(const String& body, const char* key) {
+  int i = body.indexOf(key);
+  if (i < 0) return "";
+  int a = body.indexOf('"', i + strlen(key));
+  if (a < 0) return "";
+  int b = body.indexOf('"', a + 1);
+  if (b < 0) return "";
+  return body.substring(a + 1, b);
 }
 
 void setOut1Duty(int pct) {
@@ -93,20 +133,12 @@ void setOut1Duty(int pct) {
 #endif
 }
 
-// status LED, polarity-independent. ledBase = the steady state the
-// LED returns to after any flash pattern (true = online).
 bool ledBase = false;
-
-void setStatusLed(bool on) {
-  digitalWrite(LED_PIN, on ? LED_ACTIVE : !LED_ACTIVE);
-}
-
+void setStatusLed(bool on) { digitalWrite(LED_PIN, on ? LED_ACTIVE : !LED_ACTIVE); }
 void flashLed(int times, int onMs, int offMs) {
   for (int i = 0; i < times; i++) {
-    setStatusLed(false);
-    delay(offMs);
-    setStatusLed(true);
-    delay(onMs);
+    setStatusLed(false); delay(offMs);
+    setStatusLed(true);  delay(onMs);
   }
   setStatusLed(ledBase);
 }
@@ -114,113 +146,223 @@ void flashLed(int times, int onMs, int offMs) {
 void beep(int times) {
 #if BUZZER_PIN >= 0
   for (int i = 0; i < times; i++) {
-    digitalWrite(BUZZER_PIN, HIGH);
-    delay(90);
-    digitalWrite(BUZZER_PIN, LOW);
-    delay(90);
+    digitalWrite(BUZZER_PIN, HIGH); delay(90);
+    digitalWrite(BUZZER_PIN, LOW);  delay(90);
   }
 #endif
 }
 
-void addReading(String& json, bool& first, int port, const String& value, const char* kind) {
+void bootFade() {                        // premium hello
+  for (int p = 0; p <= 60; p += 4) { setOut1Duty(p); delay(12); }
+  for (int p = 60; p >= 0; p -= 4) { setOut1Duty(p); delay(12); }
+  setOut1Duty(0);
+}
+
+const char* bootReason() {
+  switch (esp_reset_reason()) {
+    case ESP_RST_POWERON: return "power-on";
+    case ESP_RST_SW: return "software";
+    case ESP_RST_PANIC: return "crash";
+    case ESP_RST_BROWNOUT: return "brownout";
+    case ESP_RST_TASK_WDT: case ESP_RST_INT_WDT: case ESP_RST_WDT: return "watchdog";
+    case ESP_RST_DEEPSLEEP: return "deep-sleep";
+    default: return "other";
+  }
+}
+
+void isoFromEpoch(time_t t, char* out, size_t n) {
+  struct tm tmv;
+  gmtime_r(&t, &tmv);
+  strftime(out, n, "%Y-%m-%dT%H:%M:%SZ", &tmv);
+}
+
+void addReading(String& json, bool& first, int port, const String& value,
+                const char* kind, time_t epoch = 0) {
   if (!first) json += ",";
   json += "{\"port\":" + String(port) + ",\"value\":" + value +
-          ",\"kind\":\"" + kind + "\"}";
+          ",\"kind\":\"" + kind + "\"";
+  if (epoch > 1700000000) {              // only if NTP time is sane
+    char iso[24];
+    isoFromEpoch(epoch, iso, sizeof(iso));
+    json += ",\"ts\":\"" + String(iso) + "\"";
+  }
+  json += "}";
   first = false;
 }
 
-// ------------------------------------------------------------
-//  senses -> JSON
-// ------------------------------------------------------------
-String buildPayload() {
-  String json = "{\"serial\":\"" DEVICE_SERIAL "\",\"key\":\"" DEVICE_KEY
-                "\",\"fw\":\"" FIRMWARE_VERSION "\",\"rssi\":";
-  json += String(WiFi.RSSI());
-  json += ",\"readings\":[";
-  bool first = true;
+// ---- current senses -> array (for send + buffering) ---------
+struct Current { uint8_t port; float value; const char* kind; };
+Current cur[12];
+int curCount = 0;
+
+void readSenses() {
+  curCount = 0;
 
 #if ONEWIRE_PIN >= 0
   probes.requestTemperatures();
   int n = probes.getDeviceCount();
   if (n > 3) n = 3;
-  for (int i = 0; i < n; i++) {
+  for (int i = 0; i < n && curCount < 12; i++) {
     float t = probes.getTempCByIndex(i);
-    if (t > -100 && t < 125) addReading(json, first, 1 + i, String(t, 2), "temp");
+    if (t > -100 && t < 125) cur[curCount++] = { (uint8_t)(1 + i), t, "temp" };
   }
 #endif
-
 #if POT_PIN >= 0
-  {
+  if (curCount < 12) {
     long sum = 0;
     for (int i = 0; i < 8; i++) { sum += analogRead(POT_PIN); delay(2); }
-    float pct = (sum / 8.0f) * 100.0f / 4095.0f;
-    addReading(json, first, 4, String(pct, 1), "analog");
+    cur[curCount++] = { 4, (float)(sum / 8.0f * 100.0f / 4095.0f), "analog" };
   }
 #endif
-
 #if CONTACT_PIN >= 0
-  {
+  if (curCount < 12) {
     int closed = digitalRead(CONTACT_PIN) == LOW ? 1 : 0;
-    addReading(json, first, 5, String(closed), "contact");
+    cur[curCount++] = { 5, (float)closed, "contact" };
     sentContact = closed;
   }
 #endif
-
 #if MOTION_PIN >= 0
-  {
+  if (curCount < 12) {
     int m = digitalRead(MOTION_PIN) == HIGH ? 1 : 0;
-    addReading(json, first, 6, String(m), "motion");
+    cur[curCount++] = { 6, (float)m, "motion" };
     sentMotion = m;
   }
 #endif
-
 #if SOIL_PIN >= 0
-  {
+  if (curCount < 12) {
     long sum = 0;
     for (int i = 0; i < 8; i++) { sum += analogRead(SOIL_PIN); delay(2); }
-    float pct = 100.0f - (sum / 8.0f) * 100.0f / 4095.0f;
-    addReading(json, first, 10, String(pct, 1), "moisture");
+    cur[curCount++] = { 10, (float)(100.0f - sum / 8.0f * 100.0f / 4095.0f), "moisture" };
   }
 #endif
-
 #if ULTRA_TRIG_PIN >= 0 && ULTRA_ECHO_PIN >= 0
-  {
-    digitalWrite(ULTRA_TRIG_PIN, LOW);
-    delayMicroseconds(4);
-    digitalWrite(ULTRA_TRIG_PIN, HIGH);
-    delayMicroseconds(10);
+  if (curCount < 12) {
+    digitalWrite(ULTRA_TRIG_PIN, LOW); delayMicroseconds(4);
+    digitalWrite(ULTRA_TRIG_PIN, HIGH); delayMicroseconds(10);
     digitalWrite(ULTRA_TRIG_PIN, LOW);
     unsigned long us = pulseIn(ULTRA_ECHO_PIN, HIGH, 30000);
-    if (us > 0) addReading(json, first, 11, String(us / 58.0f, 1), "level");
+    if (us > 0) cur[curCount++] = { 11, us / 58.0f, "level" };
   }
 #endif
-
 #if VBUS_SENSE_PIN >= 0
-  {
+  if (curCount < 12) {
     int p = analogRead(VBUS_SENSE_PIN) > 1000 ? 1 : 0;
-    addReading(json, first, 20, String(p), "contact");
+    cur[curCount++] = { 20, (float)p, "contact" };
     sentPower = p;
   }
 #endif
 
-  json += "]}";
-  return json;
+#if ENABLE_BLE_SCAN
+  bleScanInto();
+#endif
 }
 
-// ------------------------------------------------------------
-//  report + apply controls from the reply
-// ------------------------------------------------------------
+#if ENABLE_BLE_SCAN
+// Xiaomi ATC1441 advertisement: svc data 0x181A =
+// mac[6] tempBE[2]x0.1C hum[1]% batt[1]% battmv[2] cnt[1]
+void bleScanInto() {
+  NimBLEScan* scan = NimBLEDevice::getScan();
+  scan->setActiveScan(false);
+  NimBLEScanResults results = scan->getResults(3000, false);
+  for (int i = 0; i < results.getCount() && curCount < 12; i++) {
+    const NimBLEAdvertisedDevice* d = results.getDevice(i);
+    if (!d->haveServiceData()) continue;
+    std::string sd = d->getServiceData(NimBLEUUID((uint16_t)0x181A));
+    if (sd.length() >= 11) {
+      int16_t t = (int8_t)sd[6] << 8 | (uint8_t)sd[7];
+      cur[curCount++] = { 30, t / 10.0f, "temp" };
+      if (curCount < 12) cur[curCount++] = { 31, (float)(uint8_t)sd[8], "humidity" };
+      if (curCount < 12) cur[curCount++] = { 32, (float)(uint8_t)sd[9], "battery" };
+      break;                              // first puck only, for now
+    }
+  }
+  scan->clearResults();
+}
+#endif
+
+// ---- controls (shared by HTTPS replies and MQTT messages) ---
+void applyControls(const String& body) {
+  long secs = numFromBody(body, "\"interval\":", -1);
+  if (secs >= 10 && secs <= 3600) intervalMs = secs * 1000UL;
+
+  if (body.indexOf("\"led\":true") >= 0 || body.indexOf("\"led\":false") >= 0) {
+    bool ledOn = body.indexOf("\"led\":true") >= 0;
+    long bri = numFromBody(body, "\"brightness\":", 100);
+    setOut1Duty(ledOn ? (int)bri : 0);
+  }
+
+#if OUT2_PIN >= 0
+  if (body.indexOf("\"led2\":true") >= 0)  digitalWrite(OUT2_PIN, HIGH);
+  if (body.indexOf("\"led2\":false") >= 0) digitalWrite(OUT2_PIN, LOW);
+
+  long pid = numFromBody(body, "\"pulse_id\":", -1);
+  if (pid >= 0) {
+    if (lastPulseId < 0) lastPulseId = pid;
+    else if (pid > lastPulseId) {
+      long ms = numFromBody(body, "\"pulse_ms\":", 500);
+      if (ms < 50) ms = 50;
+      if (ms > 2000) ms = 2000;
+      digitalWrite(OUT2_PIN, HIGH); delay(ms); digitalWrite(OUT2_PIN, LOW);
+      lastPulseId = pid;
+      Serial.printf("[fulnex] pulse %ldms (id %ld)\n", ms, pid);
+    }
+  }
+#endif
+
+  long bid = numFromBody(body, "\"beep_id\":", -1);
+  if (bid >= 0) {
+    if (lastBeepId < 0) lastBeepId = bid;
+    else if (bid > lastBeepId) { beep(3); lastBeepId = bid; }
+  }
+
+  if (body.indexOf("\"recipe\":true") >= 0)  recipeMode = true;
+  if (body.indexOf("\"recipe\":false") >= 0) recipeMode = false;
+
+  // cloud OTA
+  String fwVer = strFromBody(body, "\"fw_ver\":");
+  String fwUrl = strFromBody(body, "\"fw_url\":");
+  if (fwVer.length() && fwUrl.length() && fwVer != FIRMWARE_VERSION && !otaInProgress) {
+    otaInProgress = true;
+    Serial.printf("[fulnex] cloud OTA -> %s\n", fwVer.c_str());
+    WiFiClientSecure otaClient;
+    otaClient.setInsecure();
+    t_httpUpdate_return r = httpUpdate.update(otaClient, fwUrl);
+    Serial.printf("[fulnex] OTA result %d\n", (int)r);   // success reboots
+    otaInProgress = false;
+  }
+}
+
+// ---- report -------------------------------------------------
 void report() {
-  if (WiFi.status() != WL_CONNECTED) return;
+  if (WiFi.status() != WL_CONNECTED) {
+    readSenses();                        // still sample, into the buffer
+    for (int i = 0; i < curCount; i++) bufferPush(cur[i].port, cur[i].value, cur[i].kind);
+    return;
+  }
+
+  readSenses();
+
+  String json = "{\"serial\":\"" DEVICE_SERIAL "\",\"key\":\"" DEVICE_KEY
+                "\",\"fw\":\"" FIRMWARE_VERSION "\",\"rssi\":";
+  json += String(WiFi.RSSI());
+  json += ",\"uptime\":" + String(millis() / 1000UL);
+  json += ",\"heap\":" + String(ESP.getFreeHeap());
+  json += ",\"boot\":\"" + String(bootReason()) + "\"";
+  json += ",\"readings\":[";
+  bool first = true;
+  for (int i = 0; i < bufCount; i++)     // backfill first, real timestamps
+    addReading(json, first, buf[i].port, String(buf[i].value, 2), buf[i].kind, buf[i].epoch);
+  for (int i = 0; i < curCount; i++)
+    addReading(json, first, cur[i].port, String(cur[i].value, 2), cur[i].kind);
+  json += "]}";
 
   WiFiClientSecure client;
-  client.setInsecure();  // TLS without pinning in v1.0; pinned later
+  client.setInsecure();                  // pinning: v1.2, after bench test
   HTTPClient http;
   http.setTimeout(10000);
   if (!http.begin(client, INGEST_URL)) return;
   http.addHeader("Content-Type", "application/json");
-
-  int status = http.POST(buildPayload());
+  int status = http.POST(json);
   String body = http.getString();
   http.end();
 
@@ -229,45 +371,15 @@ void report() {
   if (status == 200) {
     failures = 0;
     unauthorized = false;
+    bufCount = 0;                        // backfill delivered
     flashLed(2, 60, 60);
-
-    long secs = numFromBody(body, "\"interval\":", 60);
-    if (secs >= 10 && secs <= 3600) intervalMs = secs * 1000UL;
-
-    bool ledOn = body.indexOf("\"led\":true") >= 0;
-    long bri = numFromBody(body, "\"brightness\":", 100);
-    setOut1Duty(ledOn ? (int)bri : 0);
-
-#if OUT2_PIN >= 0
-    if (body.indexOf("\"led2\":true") >= 0)  digitalWrite(OUT2_PIN, HIGH);
-    if (body.indexOf("\"led2\":false") >= 0) digitalWrite(OUT2_PIN, LOW);
-
-    long pid = numFromBody(body, "\"pulse_id\":", -1);
-    if (pid >= 0) {
-      if (lastPulseId < 0) {
-        lastPulseId = pid;  // sync on boot, never replay
-      } else if (pid > lastPulseId) {
-        long ms = numFromBody(body, "\"pulse_ms\":", 500);
-        if (ms < 50) ms = 50;
-        if (ms > 2000) ms = 2000;
-        digitalWrite(OUT2_PIN, HIGH);
-        delay(ms);
-        digitalWrite(OUT2_PIN, LOW);
-        lastPulseId = pid;
-        Serial.printf("[fulnex] pulse %ldms (id %ld)\n", ms, pid);
-      }
-    }
-#endif
-
-    long bid = numFromBody(body, "\"beep_id\":", -1);
-    if (bid >= 0) {
-      if (lastBeepId < 0) lastBeepId = bid;
-      else if (bid > lastBeepId) { beep(3); lastBeepId = bid; }
-    }
+    applyControls(body);
   } else if (status == 401) {
     unauthorized = true;
   } else {
     failures++;
+    for (int i = 0; i < curCount; i++)   // keep this sample for later
+      bufferPush(cur[i].port, cur[i].value, cur[i].kind);
     if (failures >= 10) {
       Serial.println("[fulnex] too many failures, rebooting");
       ESP.restart();
@@ -275,12 +387,19 @@ void report() {
   }
 }
 
-// events: report changed contacts/motion/power within ~2 s
+// ---- events -------------------------------------------------
 void checkEvents() {
+#if CONTACT_PIN >= 0
+  int nowContact = digitalRead(CONTACT_PIN) == LOW ? 1 : 0;
+  if (recipeMode && nowContact != liveContact) {
+    setOut1Duty(nowContact ? 100 : 0);   // local reflex, milliseconds
+  }
+  liveContact = nowContact;
+#endif
+
   bool changed = false;
 #if CONTACT_PIN >= 0
-  if (sentContact != -999 &&
-      (digitalRead(CONTACT_PIN) == LOW ? 1 : 0) != sentContact) changed = true;
+  if (sentContact != -999 && nowContact != sentContact) changed = true;
 #endif
 #if MOTION_PIN >= 0
   if (sentMotion != -999 &&
@@ -298,11 +417,49 @@ void checkEvents() {
   }
 }
 
+// ---- factory reset: hold BOOT (GPIO0) for 5 s ---------------
+void checkFactoryReset() {
+  if (digitalRead(0) == LOW) {
+    if (bootBtnDownAt == 0) bootBtnDownAt = millis();
+    else if (millis() - bootBtnDownAt > 5000) {
+      Serial.println("[fulnex] FACTORY RESET — wiping Wi-Fi");
+      flashLed(6, 60, 60);
+      WiFi.disconnect(true, true);       // erase stored credentials
+      delay(500);
+      ESP.restart();
+    }
+  } else {
+    bootBtnDownAt = 0;
+  }
+}
+
+#if ENABLE_MQTT
+void mqttCallback(char* topic, byte* payload, unsigned int len) {
+  String body;
+  body.reserve(len);
+  for (unsigned int i = 0; i < len; i++) body += (char)payload[i];
+  Serial.printf("[fulnex] mqtt cmd: %s\n", body.c_str());
+  applyControls(body);
+}
+
+void mqttMaintain() {
+  if (mqtt.connected()) { mqtt.loop(); return; }
+  if (millis() - lastMqttTry < 15000) return;
+  lastMqttTry = millis();
+  String cid = String("fulnex-") + DEVICE_SERIAL + "-" + String((uint32_t)esp_random(), HEX);
+  if (mqtt.connect(cid.c_str())) {
+    mqtt.subscribe(cmdTopic.c_str());
+    Serial.println("[fulnex] mqtt connected — instant commands live");
+  }
+}
+#endif
+
 // ------------------------------------------------------------
 void setup() {
   Serial.begin(115200);
   pinMode(LED_PIN, OUTPUT);
-  setStatusLed(false);              // off = not yet online
+  setStatusLed(false);
+  pinMode(0, INPUT_PULLUP);              // BOOT button, factory reset
 
 #if ONEWIRE_PIN >= 0
   probes.begin();
@@ -336,9 +493,8 @@ void setup() {
   ledcSetup(0, 5000, 8);
   ledcAttachPin(OUT1_PIN, 0);
 #endif
-  setOut1Duty(0);
+  bootFade();                            // hello
 
-  // FULNEX-branded setup portal
   WiFiManager wm;
   wm.setTitle("FULNEX");
   wm.setCustomHeadElement(FULNEX_PORTAL_STYLE);
@@ -352,10 +508,22 @@ void setup() {
   Serial.printf("[fulnex] online: %s (%d dBm)\n",
                 WiFi.localIP().toString().c_str(), WiFi.RSSI());
 
+  configTime(0, 0, "pool.ntp.org", "time.google.com");  // UTC for buffering
+
   ArduinoOTA.setHostname(ap.c_str());
   ArduinoOTA.begin();
 
-  ledBase = true;                   // solid = online
+#if ENABLE_MQTT
+  mqtt.setServer(MQTT_HOST, MQTT_PORT);
+  mqtt.setCallback(mqttCallback);
+  mqtt.setBufferSize(512);
+#endif
+
+#if ENABLE_BLE_SCAN
+  NimBLEDevice::init("");
+#endif
+
+  ledBase = true;
   setStatusLed(true);
   report();
   lastReport = millis();
@@ -370,6 +538,10 @@ void setup() {
 
 void loop() {
   ArduinoOTA.handle();
+  checkFactoryReset();
+#if ENABLE_MQTT
+  mqttMaintain();
+#endif
 
   if (unauthorized) {
     flashLed(1, 80, 80);
@@ -378,12 +550,12 @@ void loop() {
 
   if (WiFi.status() != WL_CONNECTED) {
     ledBase = false;
-    setStatusLed(false);            // dark = offline/reconnecting
+    setStatusLed(false);
     delay(500);
     return;
   }
   ledBase = true;
-  setStatusLed(true);               // solid = online
+  setStatusLed(true);
 
   checkEvents();
 

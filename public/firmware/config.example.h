@@ -8,10 +8,19 @@
 
 #define DEVICE_SERIAL    "FLX-XXXX"
 #define DEVICE_KEY       "your-device-key-here"
-#define FIRMWARE_VERSION "1.0.0"
+#define CLAIM_CODE       "XXXXXX"           // shown on the setup portal
+#define MQTT_SECRET      "your-mqtt-secret-here"   // instant-command topic secret
+#define FIRMWARE_VERSION "1.1.0"
 
 // Platform
 #define INGEST_URL "https://esqtrcxaozymslwpeqgu.supabase.co/functions/v1/ingest"
+#define CLAIM_BASE "https://fulnex-hub.vercel.app/claim/"
+
+// Instant commands (site -> device in ~1s). Public broker with an
+// unguessable per-device topic for the pilot; own broker later.
+#define ENABLE_MQTT   1
+#define MQTT_HOST     "broker.hivemq.com"
+#define MQTT_PORT     1883
 
 // ------------------------------------------------------------
 //  Status LED (onboard)
@@ -68,6 +77,13 @@
 // senses don't apply while asleep.
 #define ENABLE_DEEP_SLEEP 0
 
-// Planned for v1.1 (not in this build): BLE scanning for Fulnex
-// Senses and tracking tags, cloud OTA channel, offline buffering.
+// EXPERIMENTAL: BLE scan for Xiaomi ATC climate pucks -> ports
+// 30 (temp) / 31 (humidity) / 32 (battery). Needs the
+// "NimBLE-Arduino" library. Heavier on memory; test on the bench.
+#define ENABLE_BLE_SCAN 0
+
+// v1.1 also includes (always on): NTP time, offline reading
+// buffer, cloud OTA, local reflex recipe, factory reset (hold
+// BOOT 5s), boot fade, telemetry. TLS pinning lands in v1.2
+// after a supervised bench test of the live cert chain.
 

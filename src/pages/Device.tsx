@@ -1,5 +1,6 @@
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
+import mqtt, { MqttClient } from "mqtt";
 import {
   Area, AreaChart, CartesianGrid, Line, LineChart,
   ResponsiveContainer, Tooltip, XAxis, YAxis,
@@ -9,7 +10,7 @@ import {
   Cpu, DoorOpen, Droplets, Gauge, Radar, Thermometer, Waves,
 } from "lucide-react";
 import {
-  AlertRule, Device, Port, Reading, formatReading, isOnline, supabase, timeAgo,
+  AlertRule, Device, Port, Reading, fmtUptime, formatReading, isOnline, supabase, timeAgo,
 } from "../lib/supabase";
 import { FadeUp, LiveDot, Stagger, StaggerItem } from "../components/motion";
 
@@ -41,10 +42,51 @@ export default function DevicePage() {
   const [name, setName] = useState("");
   const [uid, setUid] = useState("");
   const [range, setRange] = useState<RangeKey>("24h");
+  const mqttRef = useRef<MqttClient | null>(null);
+  const [instant, setInstant] = useState(false);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUid(data.user?.id ?? ""));
   }, []);
+
+  // instant command channel — connects when the device has a topic secret
+  const mqttSecret = device?.mqtt_secret ?? null;
+  const mqttSerial = device?.serial ?? null;
+  useEffect(() => {
+    if (!mqttSecret || !mqttSerial) return;
+    const client = mqtt.connect("wss://broker.hivemq.com:8884/mqtt", {
+      reconnectPeriod: 5000,
+      connectTimeout: 8000,
+    });
+    client.on("connect", () => setInstant(true));
+    client.on("close", () => setInstant(false));
+    mqttRef.current = client;
+    return () => {
+      mqttRef.current = null;
+      client.end(true);
+    };
+  }, [mqttSecret, mqttSerial]);
+
+  const publishInstant = useCallback(
+    (overrides: Record<string, unknown>) => {
+      const c = mqttRef.current;
+      if (!c || !c.connected || !device) return;
+      const d = (device.desired ?? {}) as Record<string, unknown>;
+      const payload = {
+        led: device.led_on,
+        led2: d.led2 === true,
+        ...(typeof d.brightness === "number" ? { brightness: d.brightness } : {}),
+        ...(typeof d.interval === "number" ? { interval: d.interval } : {}),
+        recipe: d.recipe === true,
+        ...overrides,
+      };
+      c.publish(
+        `fulnex/${device.serial}/${device.mqtt_secret}/cmd`,
+        JSON.stringify(payload),
+      );
+    },
+    [device],
+  );
 
   const load = useCallback(async () => {
     if (!id) return;
@@ -112,15 +154,20 @@ export default function DevicePage() {
               {device.fw_version ? ` · fw ${device.fw_version}` : ""}
               {typeof device.wifi_rssi === "number" ? ` · ${device.wifi_rssi} dBm` : ""}
               {typeof device.battery_pct === "number" ? ` · battery ${device.battery_pct}%` : ""}
+              {typeof device.uptime_s === "number" ? ` · up ${fmtUptime(device.uptime_s)}` : ""}
+              {typeof device.free_heap === "number" ? ` · heap ${Math.round(device.free_heap / 1024)}k` : ""}
+              {device.boot_reason ? ` · boot: ${device.boot_reason}` : ""}
+              {instant ? " · ⚡ instant" : ""}
             </p>
           </div>
           <button
             onClick={async () => {
+              publishInstant({ led: !device.led_on });
               await supabase.from("devices").update({ led_on: !device.led_on }).eq("id", device.id);
               load();
             }}
             className="flex items-center gap-3 group"
-            title="applies on the device's next report"
+            title={instant ? "instant" : "applies on the device's next report"}
           >
             <span className="text-xs font-mono uppercase tracking-widest text-mute group-hover:text-ink">LED</span>
             <span
@@ -147,7 +194,7 @@ export default function DevicePage() {
         </form>
       </FadeUp>
 
-      <ControlsCard device={device} onChange={load} />
+      <ControlsCard device={device} onChange={load} publish={publishInstant} instant={instant} />
 
       {portNos.length > 0 && (
         <Stagger className="grid gap-3 sm:gap-4" delay={0.1}>
@@ -312,16 +359,23 @@ export default function DevicePage() {
   );
 }
 
-function ControlsCard({ device, onChange }: { device: Device; onChange: () => void }) {
+function ControlsCard({ device, onChange, publish, instant }: {
+  device: Device;
+  onChange: () => void;
+  publish: (o: Record<string, unknown>) => void;
+  instant: boolean;
+}) {
   const desired = (device.desired ?? {}) as Record<string, unknown>;
   const [brightness, setBrightness] = useState<number>(
     typeof desired.brightness === "number" ? (desired.brightness as number) : 100,
   );
   const [pulsing, setPulsing] = useState(false);
   const led2 = desired.led2 === true;
+  const recipe = desired.recipe === true;
   const interval = typeof desired.interval === "number" ? (desired.interval as number) : 60;
 
   async function updateDesired(patch: Record<string, unknown>) {
+    publish(patch);                       // instant path, if connected
     await supabase
       .from("devices")
       .update({ desired: { ...desired, ...patch } })
@@ -334,7 +388,7 @@ function ControlsCard({ device, onChange }: { device: Device; onChange: () => vo
       <div className="flex items-baseline justify-between mb-4">
         <h2 className="font-medium">Controls</h2>
         <span className="text-faint text-[11px] font-mono">
-          applies on next report (≤ {interval} s)
+          {instant ? "⚡ instant channel connected" : `applies on next report (≤ ${interval} s)`}
         </span>
       </div>
       <div className="flex flex-wrap items-center gap-x-8 gap-y-5">
@@ -373,6 +427,16 @@ function ControlsCard({ device, onChange }: { device: Device; onChange: () => vo
           className="btn-brass font-medium rounded-lg px-4 py-1.5 text-sm disabled:opacity-50"
         >
           {pulsing ? "pulsing…" : "Pulse (500 ms)"}
+        </button>
+
+        <button onClick={() => updateDesired({ recipe: !recipe })} className="flex items-center gap-3 group"
+          title="the switch drives the LED on-device, instantly — even offline">
+          <span className="text-xs font-mono uppercase tracking-widest text-mute group-hover:text-ink">Reflex</span>
+          <span className={`relative w-11 h-6 rounded-full transition-colors flex items-center px-0.5 ${
+            recipe ? "bg-brass justify-end shadow-[0_0_14px_rgba(255,255,255,.35)]" : "bg-line justify-start"
+          }`}>
+            <motion.span layout transition={{ type: "spring", stiffness: 550, damping: 32 }} className="w-5 h-5 rounded-full bg-ink" />
+          </span>
         </button>
 
         <label className="flex items-center gap-3">

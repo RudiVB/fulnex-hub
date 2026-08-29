@@ -101,6 +101,9 @@ Deno.serve(async (req) => {
     ...(typeof body.rssi === "number" ? { wifi_rssi: body.rssi } : {}),
     ...(typeof body.battery === "number" ? { battery_pct: body.battery } : {}),
     ...(typeof body.fw === "string" ? { fw_version: body.fw } : {}),
+    ...(typeof body.uptime === "number" ? { uptime_s: body.uptime } : {}),
+    ...(typeof body.heap === "number" ? { free_heap: body.heap } : {}),
+    ...(typeof body.boot === "string" ? { boot_reason: String(body.boot).slice(0, 24) } : {}),
   }).eq("id", device.id);
 
   // flatten desired state into the reply; firmware acts on known keys
@@ -120,6 +123,12 @@ Deno.serve(async (req) => {
   if (pulseId !== undefined) {
     reply.pulse_id = pulseId;
     reply.pulse_ms = Math.min(2000, Math.max(50, num(d.pulse_ms) ?? 500));
+  }
+  reply.recipe = d.recipe === true;
+  // cloud OTA: admin sets desired.fw_ver + fw_url; device self-updates
+  if (typeof d.fw_ver === "string" && typeof d.fw_url === "string" && d.fw_ver !== body.fw) {
+    reply.fw_ver = d.fw_ver;
+    reply.fw_url = d.fw_url;
   }
   return Response.json(reply);
 });
