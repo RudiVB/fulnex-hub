@@ -4,9 +4,11 @@ import {
   Area, AreaChart, CartesianGrid, Line, LineChart,
   ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from "recharts";
+import { motion } from "framer-motion";
 import {
   AlertRule, Device, Port, Reading, formatReading, isOnline, supabase, timeAgo,
 } from "../lib/supabase";
+import { FadeUp, LiveDot, Stagger, StaggerItem } from "../components/motion";
 
 const RANGES = [
   { key: "6h", hours: 6 },
@@ -80,13 +82,13 @@ export default function DevicePage() {
 
   return (
     <div className="space-y-6">
-      <div className="bg-panel border border-line rounded-2xl p-6">
+      <FadeUp className="bg-panel border border-line rounded-2xl p-5 sm:p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <div className="flex items-center gap-3 mb-1">
               <h1 className="text-xl font-semibold">{device.name || device.serial}</h1>
-              <span className={`inline-flex items-center gap-1.5 text-xs font-mono ${online ? "text-ok" : "text-faint"}`}>
-                <span className={`w-2 h-2 rounded-full ${online ? "bg-ok shadow-[0_0_8px_rgba(74,222,128,.6)]" : "bg-faint"}`} />
+              <span className={`inline-flex items-center gap-2 text-xs font-mono ${online ? "text-ok" : "text-faint"}`}>
+                <LiveDot online={online} />
                 {online ? "online" : "offline"}
               </span>
             </div>
@@ -107,14 +109,14 @@ export default function DevicePage() {
           >
             <span className="text-xs font-mono uppercase tracking-widest text-mute group-hover:text-ink">LED</span>
             <span
-              className={`relative w-11 h-6 rounded-full transition-colors ${
-                device.led_on ? "bg-brass" : "bg-line"
+              className={`relative w-11 h-6 rounded-full transition-colors flex items-center px-0.5 ${
+                device.led_on ? "bg-brass justify-end shadow-[0_0_14px_rgba(201,164,76,.5)]" : "bg-line justify-start"
               }`}
             >
-              <span
-                className={`absolute top-0.5 w-5 h-5 rounded-full bg-ink transition-all ${
-                  device.led_on ? "left-[22px]" : "left-0.5"
-                }`}
+              <motion.span
+                layout
+                transition={{ type: "spring", stiffness: 550, damping: 32 }}
+                className="w-5 h-5 rounded-full bg-ink"
               />
             </span>
           </button>
@@ -128,35 +130,48 @@ export default function DevicePage() {
           />
           <button className="text-sm border border-line rounded-lg px-3 hover:border-brassdim">Save</button>
         </form>
-      </div>
+      </FadeUp>
 
       {portNos.length > 0 && (
-        <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))" }}>
-          {portNos.map((portNo) => {
-            const port = ports.find((p) => p.port_no === portNo);
-            const series = readings.filter((r) => r.port_no === portNo);
-            const latest = series[series.length - 1];
-            return (
-              <div key={portNo} className="bg-panel border border-line rounded-2xl px-5 py-4">
-                <div className="text-[11px] font-mono uppercase tracking-widest text-brass mb-1 truncate">
-                  {port?.label || `Port ${portNo}`}
-                </div>
-                <div className="text-2xl font-semibold tabular-nums">
-                  {latest ? formatReading(port?.kind ?? null, latest.value) : "–"}
-                </div>
-                <div className="text-faint text-[11px] font-mono mt-0.5">
-                  {port?.kind ?? "sensor"} · {latest ? timeAgo(latest.ts) : ""}
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        <Stagger className="grid gap-3 sm:gap-4" delay={0.1}>
+          <div className="grid gap-3 sm:gap-4" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))" }}>
+            {portNos.map((portNo) => {
+              const port = ports.find((p) => p.port_no === portNo);
+              const series = readings.filter((r) => r.port_no === portNo);
+              const latest = series[series.length - 1];
+              return (
+                <StaggerItem key={portNo} className="bg-panel border border-line rounded-2xl px-5 py-4">
+                  <div className="text-[11px] font-mono uppercase tracking-widest text-brass mb-1 truncate">
+                    {port?.label || `Port ${portNo}`}
+                  </div>
+                  <div className="text-2xl font-semibold tabular-nums">
+                    {latest ? formatReading(port?.kind ?? null, latest.value) : "–"}
+                  </div>
+                  <div className="text-faint text-[11px] font-mono mt-0.5">
+                    {port?.kind ?? "sensor"} · {latest ? timeAgo(latest.ts) : ""}
+                  </div>
+                </StaggerItem>
+              );
+            })}
+          </div>
+        </Stagger>
       )}
 
       {portNos.length === 0 ? (
-        <div className="bg-panel border border-line rounded-2xl p-8 text-center">
-          <div className="inline-flex items-center gap-2 text-brass font-mono text-xs mb-3">
-            <span className="w-2 h-2 rounded-full bg-brass animate-pulse" />
+        <div className="bg-panel border border-line rounded-2xl p-8 text-center overflow-hidden">
+          <div className="relative inline-flex items-center justify-center w-16 h-16 mb-4">
+            {[0, 1, 2].map((i) => (
+              <motion.span
+                key={i}
+                className="absolute inset-0 rounded-full border border-brass"
+                initial={{ scale: 0.3, opacity: 0.7 }}
+                animate={{ scale: 1.6, opacity: 0 }}
+                transition={{ duration: 2.4, repeat: Infinity, delay: i * 0.8, ease: "easeOut" }}
+              />
+            ))}
+            <span className="w-2.5 h-2.5 rounded-full bg-brass shadow-[0_0_12px_rgba(201,164,76,.8)]" />
+          </div>
+          <div className="text-brass font-mono text-xs mb-3">
             listening — this page checks every 30 seconds
           </div>
           <p className="text-mute max-w-md mx-auto">
@@ -202,7 +217,7 @@ export default function DevicePage() {
             const latest = series[series.length - 1];
             const gradId = `grad-${portNo}`;
             return (
-              <div key={portNo} className="bg-panel border border-line rounded-2xl p-5">
+              <FadeUp key={portNo} className="bg-panel border border-line rounded-2xl p-4 sm:p-5">
                 <div className="flex items-baseline justify-between mb-3">
                   <h2 className="font-medium">
                     {port?.label || `Port ${portNo}`}
@@ -261,7 +276,7 @@ export default function DevicePage() {
                     )}
                   </ResponsiveContainer>
                 </div>
-              </div>
+              </FadeUp>
             );
           })}
         </>

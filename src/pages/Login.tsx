@@ -1,5 +1,9 @@
 import { FormEvent, useState } from "react";
+import { motion } from "framer-motion";
 import { supabase } from "../lib/supabase";
+import { DeviceMark, easeOut } from "../components/motion";
+
+const TAG = "Your things, watched.";
 
 export default function Login() {
   const [mode, setMode] = useState<"signin" | "signup">("signin");
@@ -28,52 +32,91 @@ export default function Login() {
   }
 
   return (
-    <div className="mx-auto max-w-sm pt-12">
-      <div className="text-center mb-8">
-        <div className="font-display tracking-widest text-2xl mb-2">FULNEX</div>
-        <p className="text-mute text-sm">Your things, watched.</p>
+    <div className="grid lg:grid-cols-2 gap-12 lg:gap-8 items-center pt-6 lg:pt-16">
+      <div className="flex flex-col items-center lg:items-start text-center lg:text-left">
+        <DeviceMark size={170} />
+        <motion.h1
+          className="font-display tracking-[0.18em] text-2xl sm:text-3xl mt-10 mb-3"
+          initial={{ opacity: 0, letterSpacing: "0.4em" }}
+          animate={{ opacity: 1, letterSpacing: "0.18em" }}
+          transition={{ duration: 1.1, ease: easeOut, delay: 0.15 }}
+        >
+          FULNEX
+        </motion.h1>
+        <motion.p
+          className="text-mute text-lg max-w-xs"
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.5, ease: easeOut }}
+        >
+          {TAG}
+        </motion.p>
+        <motion.p
+          className="text-faint text-sm mt-4 max-w-sm hidden lg:block"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.8, delay: 0.8 }}
+        >
+          Temperatures, power, water, doors, and the people you love — one small
+          box that notices, so you don't have to.
+        </motion.p>
       </div>
-      <form onSubmit={submit} className="bg-panel border border-line rounded-xl p-6 space-y-4">
-        <div>
-          <label className="block text-xs font-mono uppercase tracking-widest text-brass mb-1">Email</label>
-          <input
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full bg-ground border border-line rounded-lg px-3 py-2 focus:outline-none focus:border-brass"
-          />
-        </div>
-        <div>
-          <label className="block text-xs font-mono uppercase tracking-widest text-brass mb-1">Password</label>
-          <input
-            type="password"
-            required
-            minLength={6}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full bg-ground border border-line rounded-lg px-3 py-2 focus:outline-none focus:border-brass"
-          />
-        </div>
-        {error && <p className="text-danger text-sm">{error}</p>}
-        {notice && <p className="text-ok text-sm">{notice}</p>}
-        <button
-          disabled={busy}
-          className="w-full bg-brass text-ground font-medium rounded-lg py-2 hover:opacity-90 disabled:opacity-50"
+
+      <motion.div
+        initial={{ opacity: 0, y: 22 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.7, delay: 0.3, ease: easeOut }}
+        className="w-full max-w-sm mx-auto lg:mx-0 lg:justify-self-end"
+      >
+        <form
+          onSubmit={submit}
+          className="bg-panel/80 backdrop-blur border border-line rounded-2xl p-6 sm:p-7 space-y-4 shadow-[0_30px_80px_-40px_rgba(0,0,0,.9)]"
         >
-          {busy ? "…" : mode === "signin" ? "Sign in" : "Create account"}
-        </button>
-        <button
-          type="button"
-          onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
-          className="w-full text-faint text-sm hover:text-ink"
-        >
-          {mode === "signin" ? "New here? Create an account" : "Have an account? Sign in"}
-        </button>
-      </form>
-      <p className="text-center text-faint text-sm mt-6">
-        Setting up a device? <a href="/setup" className="text-brass hover:underline">Start here</a>
-      </p>
+          <h2 className="font-medium text-lg mb-1">
+            {mode === "signin" ? "Welcome back" : "Create your account"}
+          </h2>
+          <div>
+            <label className="block text-xs font-mono uppercase tracking-widest text-brass mb-1.5">Email</label>
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full bg-ground border border-line rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-brass transition-colors"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-mono uppercase tracking-widest text-brass mb-1.5">Password</label>
+            <input
+              type="password"
+              required
+              minLength={6}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full bg-ground border border-line rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-brass transition-colors"
+            />
+          </div>
+          {error && <p className="text-danger text-sm">{error}</p>}
+          {notice && <p className="text-ok text-sm">{notice}</p>}
+          <motion.button
+            whileTap={{ scale: 0.97 }}
+            disabled={busy}
+            className="w-full bg-brass text-ground font-medium rounded-xl py-2.5 hover:opacity-90 disabled:opacity-50 transition-opacity"
+          >
+            {busy ? "…" : mode === "signin" ? "Sign in" : "Create account"}
+          </motion.button>
+          <button
+            type="button"
+            onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
+            className="w-full text-faint text-sm hover:text-ink transition-colors"
+          >
+            {mode === "signin" ? "New here? Create an account" : "Have an account? Sign in"}
+          </button>
+        </form>
+        <p className="text-center text-faint text-sm mt-5">
+          Setting up a device? <a href="/setup" className="text-brass hover:underline">Start here</a>
+        </p>
+      </motion.div>
     </div>
   );
 }

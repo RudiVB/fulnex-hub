@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
 import { Device, isOnline, supabase, timeAgo } from "../lib/supabase";
+import { AnimatedNumber, LiveDot, Stagger, StaggerItem } from "../components/motion";
 
 type SparkPoint = { ts: number; value: number };
 
@@ -19,12 +21,32 @@ function Sparkline({ points }: { points: SparkPoint[] }) {
   const last = points[points.length - 1];
   return (
     <svg width={w} height={h} className="block">
-      <path
+      <motion.path
         d={`${d}L${sx(last.ts).toFixed(1)},${h - pad}L${sx(points[0].ts).toFixed(1)},${h - pad}Z`}
         fill="rgba(201,164,76,0.12)"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.8, delay: 0.6 }}
       />
-      <path d={d} fill="none" stroke="#c9a44c" strokeWidth="1.5" strokeLinejoin="round" />
-      <circle cx={sx(last.ts)} cy={sy(last.value)} r="2.5" fill="#c9a44c" />
+      <motion.path
+        d={d}
+        fill="none"
+        stroke="#c9a44c"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+        initial={{ pathLength: 0 }}
+        animate={{ pathLength: 1 }}
+        transition={{ duration: 1.1, ease: "easeOut" }}
+      />
+      <motion.circle
+        cx={sx(last.ts)}
+        cy={sy(last.value)}
+        r="2.5"
+        fill="#c9a44c"
+        initial={{ opacity: 0, scale: 0 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 1, duration: 0.3 }}
+      />
     </svg>
   );
 }
@@ -123,63 +145,67 @@ export default function Devices() {
 
   return (
     <div>
-      <div className="grid grid-cols-3 gap-4 mb-8">
-        <div className="bg-panel border border-line rounded-2xl px-5 py-4">
+      <Stagger className="grid grid-cols-1 min-[520px]:grid-cols-3 gap-3 sm:gap-4 mb-8">
+        <StaggerItem className="bg-panel border border-line rounded-2xl px-5 py-4">
           <div className="text-[11px] font-mono uppercase tracking-widest text-brass mb-1">Online</div>
           <div className="text-2xl font-semibold tabular-nums">
-            {online}<span className="text-faint text-base font-normal">/{devices.length}</span>
+            <AnimatedNumber value={online} />
+            <span className="text-faint text-base font-normal">/{devices.length}</span>
           </div>
-        </div>
-        <div className="bg-panel border border-line rounded-2xl px-5 py-4">
+        </StaggerItem>
+        <StaggerItem className="bg-panel border border-line rounded-2xl px-5 py-4">
           <div className="text-[11px] font-mono uppercase tracking-widest text-brass mb-1">Readings · 24 h</div>
-          <div className="text-2xl font-semibold tabular-nums">{count24 ?? "–"}</div>
-        </div>
-        <div className="bg-panel border border-line rounded-2xl px-5 py-4">
+          <div className="text-2xl font-semibold tabular-nums">
+            {count24 === null ? "–" : <AnimatedNumber value={count24} />}
+          </div>
+        </StaggerItem>
+        <StaggerItem className="bg-panel border border-line rounded-2xl px-5 py-4">
           <div className="text-[11px] font-mono uppercase tracking-widest text-brass mb-1">Last activity</div>
           <div className="text-2xl font-semibold tabular-nums">{lastSeen ? timeAgo(lastSeen) : "–"}</div>
-        </div>
-      </div>
+        </StaggerItem>
+      </Stagger>
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <Stagger className="grid gap-3 sm:gap-4 sm:grid-cols-2" delay={0.15}>
         {devices.map((d) => {
           const on = isOnline(d);
           const shared = uid && d.owner && d.owner !== uid;
           return (
-            <Link
-              key={d.id}
-              to={`/device/${d.id}`}
-              className="group bg-panel border border-line rounded-2xl p-5 hover:border-brassdim transition-all hover:-translate-y-0.5"
-            >
-              <div className="flex items-center justify-between mb-1">
-                <span className="font-medium flex items-center gap-2">
-                  <span className={`w-2 h-2 rounded-full ${on ? "bg-ok shadow-[0_0_8px_rgba(74,222,128,.6)]" : "bg-faint"}`} />
-                  {d.name || d.serial}
-                  {shared && (
-                    <span className="text-[10px] font-mono uppercase tracking-wider text-brass border border-brassdim rounded px-1.5 py-px">
-                      shared
-                    </span>
-                  )}
-                </span>
-                <span className={`text-xs font-mono ${on ? "text-ok" : "text-faint"}`}>
-                  {on ? "online" : "offline"}
-                </span>
-              </div>
-              <div className="text-faint text-xs font-mono mb-4">
-                {d.serial} · {d.role}
-                {d.fw_version ? ` · fw ${d.fw_version}` : ""}
-              </div>
-              <div className="flex items-end justify-between gap-4">
-                <Sparkline points={sparks[d.id] ?? []} />
-                <div className="text-right text-xs text-mute space-y-0.5 tabular-nums">
-                  <div>seen {timeAgo(d.last_seen)}</div>
-                  {typeof d.wifi_rssi === "number" && <div>{d.wifi_rssi} dBm</div>}
-                  {typeof d.battery_pct === "number" && <div>battery {d.battery_pct}%</div>}
+            <StaggerItem key={d.id}>
+              <Link
+                to={`/device/${d.id}`}
+                className="group block bg-panel border border-line rounded-2xl p-5 hover:border-brassdim transition-all hover:-translate-y-0.5 hover:shadow-[0_20px_50px_-30px_rgba(0,0,0,.9)]"
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className="font-medium flex items-center gap-2.5">
+                    <LiveDot online={on} />
+                    {d.name || d.serial}
+                    {shared && (
+                      <span className="text-[10px] font-mono uppercase tracking-wider text-brass border border-brassdim rounded px-1.5 py-px">
+                        shared
+                      </span>
+                    )}
+                  </span>
+                  <span className={`text-xs font-mono ${on ? "text-ok" : "text-faint"}`}>
+                    {on ? "online" : "offline"}
+                  </span>
                 </div>
-              </div>
-            </Link>
+                <div className="text-faint text-xs font-mono mb-4">
+                  {d.serial} · {d.role}
+                  {d.fw_version ? ` · fw ${d.fw_version}` : ""}
+                </div>
+                <div className="flex items-end justify-between gap-4">
+                  <Sparkline points={sparks[d.id] ?? []} />
+                  <div className="text-right text-xs text-mute space-y-0.5 tabular-nums">
+                    <div>seen {timeAgo(d.last_seen)}</div>
+                    {typeof d.wifi_rssi === "number" && <div>{d.wifi_rssi} dBm</div>}
+                    {typeof d.battery_pct === "number" && <div>battery {d.battery_pct}%</div>}
+                  </div>
+                </div>
+              </Link>
+            </StaggerItem>
           );
         })}
-      </div>
+      </Stagger>
     </div>
   );
 }
