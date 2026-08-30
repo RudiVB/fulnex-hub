@@ -150,7 +150,7 @@ export function CaseViewer() {
         <span className="ml-auto text-faint text-[10px] font-mono">drag to inspect · scroll to zoom</span>
       </div>
       <div
-        className="rounded-xl border border-line bg-[radial-gradient(120%_120%_at_30%_20%,#101214_0%,#0a0b0d_70%)] overflow-hidden relative"
+        className="rounded-xl border border-line bg-[radial-gradient(120%_120%_at_30%_20%,#3a3f47_0%,#1c1f24_75%)] overflow-hidden relative"
         style={{ height: 340 }}
       >
         {/* three.js owns this div exclusively — React never renders into it */}

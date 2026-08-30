@@ -685,6 +685,32 @@ const PRESETS = [
   { key: "grow", label: "Grow", rh_hi: 70, rh_lo: 60, t_hi: 32, air_on: 10, air_rest: 20 },
 ] as const;
 
+// Stable top-level component: defining this inside the card
+// recreated the input on every render, which dismissed the mobile
+// keyboard after each tap. Never again.
+function Field({ label, value, set, unit, min, max }: {
+  label: string; value: number; set: (n: number) => void;
+  unit: string; min: number; max: number;
+}) {
+  return (
+    <label className="flex items-center justify-between gap-2 w-full">
+      <span className="text-[11px] font-mono uppercase tracking-widest text-mute">{label}</span>
+      <span className="flex items-center gap-1.5">
+        <input
+          type="number"
+          inputMode="numeric"
+          min={min}
+          max={max}
+          value={value}
+          onChange={(e) => set(Number(e.target.value))}
+          className="w-16 bg-ground border border-line rounded-lg px-2 py-1 text-sm font-mono text-right focus:outline-none focus:border-brass"
+        />
+        <span className="text-faint text-xs font-mono w-8">{unit}</span>
+      </span>
+    </label>
+  );
+}
+
 function AutopilotCard({ device, onChange, publish, readings }: {
   device: Device;
   onChange: () => void;
@@ -723,26 +749,6 @@ function AutopilotCard({ device, onChange, publish, readings }: {
     save({ cl_rh_hi: p.rh_hi, cl_rh_lo: p.rh_lo, cl_t_hi: p.t_hi,
            cl_air_on: p.air_on, cl_air_rest: p.air_rest });
   }
-
-  const Field = ({ label, value, set, unit, min, max }: {
-    label: string; value: number; set: (n: number) => void;
-    unit: string; min: number; max: number;
-  }) => (
-    <label className="flex items-center justify-between gap-2 w-full">
-      <span className="text-[11px] font-mono uppercase tracking-widest text-mute">{label}</span>
-      <span className="flex items-center gap-1.5">
-        <input
-          type="number"
-          min={min}
-          max={max}
-          value={value}
-          onChange={(e) => set(Number(e.target.value))}
-          className="w-16 bg-ground border border-line rounded-lg px-2 py-1 text-sm font-mono text-right focus:outline-none focus:border-brass"
-        />
-        <span className="text-faint text-xs font-mono w-8">{unit}</span>
-      </span>
-    </label>
-  );
 
   return (
     <div className="card p-5">

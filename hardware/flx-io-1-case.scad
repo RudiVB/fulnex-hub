@@ -153,13 +153,13 @@ module lid() {
           }
     }
     translate([W/2, D/2 + 10, Tlid - 0.6])
-      linear_extrude(0.7)
-        fulnex_logo(7.5);
+      linear_extrude(1.0)
+        fulnex_logo(6);
     translate([W/2, D/2 - 10, Tlid - 0.6])
       linear_extrude(0.7)
-        text("FLX-IO", size = 2.8, font = "Michroma",
+        text("FLX-IO", size = 2.2, font = "Michroma",
              halign = "center", valign = "center", spacing = 1.5);
-    translate([W/2 + fulnex_eye_x(7.5), D/2 + 10, -1]) cylinder(d = pipe_d, h = Tlid + 2);
+    translate([W/2 + fulnex_eye_x(6), D/2 + 10, -1]) cylinder(d = pipe_d, h = Tlid + 2);
     for (p = lidboss_xy) {
       translate([p[0], p[1], -3]) cylinder(d = 2.6, h = Tlid + 4);
       translate([p[0], p[1], Tlid - 1.3]) cylinder(d1 = 2.6, d2 = 5.4, h = 1.4);

@@ -155,11 +155,11 @@ module base() {
     // ---- tagline, debossed into the clean front face ----
     translate([W/2, 0.6, 21.5]) rotate([90, 0, 0])
       linear_extrude(0.7)
-        text("YOUR THINGS,", size = 3.6, font = "Michroma",
+        text("YOUR THINGS,", size = 3.0, font = "Michroma",
              halign = "center", valign = "center", spacing = 1.35);
     translate([W/2, 0.6, 15]) rotate([90, 0, 0])
       linear_extrude(0.7)
-        text("WATCHED", size = 3.6, font = "Michroma",
+        text("WATCHED", size = 3.0, font = "Michroma",
              halign = "center", valign = "center", spacing = 1.35);
 
     // ---- wall-hang keyholes: classic portrait — screw head in
@@ -233,9 +233,9 @@ module lid() {
     // the FULNEX logotype across the face — drawn, slit and all
     translate([W/2, D/2 + 7, Tlid + 3.55 - logo_depth])
       linear_extrude(logo_depth + 0.1)
-        fulnex_logo(11);
+        fulnex_logo(8);
     // the LED shines through the X of the logotype
-    translate([W/2 + fulnex_eye_x(11), D/2 + 7, -H])
+    translate([W/2 + fulnex_eye_x(8), D/2 + 7, -H])
       cylinder(d = pipe_d, h = H + Tlid + crown_rise + 2);
     // screw threads into the posts, from below
     for (p = lidpost_xy)

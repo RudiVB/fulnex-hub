@@ -1,3 +1,4 @@
+use <fulnex-logo.scad>;
 // ============================================================
 //  FLX-SOIL-1 — the soil spike head (Rev A)
 //  FULNEX · one printed piece that caps the common capacitive
@@ -40,9 +41,12 @@ difference() {
       translate([-1, -1, 0]) cube([OW + 2, OD + 2, 1.1]);
       translate([0.8, 0.8, -0.5]) rbox(OW - 1.6, OD - 1.6, 2.1, R - 0.8);
     }
-  // identity on the face
-  translate([OW/2, 1.0, OH/2 + 2])
-    rotate([90, 90, 0]) linear_extrude(1.1)
-      text("FULNEX · SOIL", size = 2.6, font = "Michroma",
-           halign = "center", valign = "center", spacing = 1.6);
+  // identity on the face — the logotype horizontal, SOIL beneath
+  translate([OW/2, 1.0, OH - 5])
+    rotate([90, 0, 0]) linear_extrude(1.1)
+      fulnex_logo(2.6);
+  translate([OW/2, 1.0, OH - 15])
+    rotate([90, 0, 0]) linear_extrude(0.9)
+      text("SOIL", size = 1.8, font = "Michroma",
+           halign = "center", valign = "center", spacing = 1.5);
 }

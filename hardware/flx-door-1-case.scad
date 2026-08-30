@@ -55,14 +55,14 @@ module bar() {
       linear_extrude(BH - BTOP) offset(-BWALL) pill(BL, BW, BR);
     // face is at z = BH (printed face-down): deboss identity
     translate([BL/2, BW/2 + 5.8, BH - 0.6])
-      linear_extrude(0.7)
-        fulnex_logo(4.6);
+      linear_extrude(1.0)
+        fulnex_logo(3.4);
     translate([BL/2, BW/2 - 6, BH - 0.6])
       linear_extrude(0.7)
-        text("DOOR", size = 2.4, font = "Michroma",
+        text("DOOR", size = 1.8, font = "Michroma",
              halign = "center", valign = "center", spacing = 1.5);
     // the LED shines through the X of the logotype
-    translate([BL/2 + fulnex_eye_x(4.6), BW/2 + 5.8, BH - 3])
+    translate([BL/2 + fulnex_eye_x(3.4), BW/2 + 5.8, BH - 3])
       cylinder(d = pipe_d, h = 4);
     // alignment line on the magnet-side long edge
     translate([BL/2 - 6, 0.6, BH - 4])
