@@ -151,6 +151,16 @@ module base() {
       translate([22 + i * 10, 44, -1])
         linear_extrude(Tf + 2) squircle(3, 12, 1.4);
 
+    // ---- tagline, debossed into the clean front face ----
+    translate([W/2, 0.6, 21.5]) rotate([90, 0, 0])
+      linear_extrude(0.7)
+        text("YOUR THINGS,", size = 3.6, font = "Arial:style=Bold",
+             halign = "center", valign = "center", spacing = 1.35);
+    translate([W/2, 0.6, 15]) rotate([90, 0, 0])
+      linear_extrude(0.7)
+        text("WATCHED", size = 3.6, font = "Arial:style=Bold",
+             halign = "center", valign = "center", spacing = 1.35);
+
     // ---- QR label recess, underside ----
     translate([W/2 - label_w/2, D/2 - label_h/2, -0.01])
       cube([label_w, label_h, label_t]);

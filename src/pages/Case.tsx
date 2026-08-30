@@ -20,6 +20,7 @@ const ARCHITECTURE = [
 ];
 
 const HOLES: { where: string; hole: string; why: string }[] = [
+  { where: "Front face", hole: "No openings — the debossed tagline", why: "\"YOUR THINGS, WATCHED\" pressed into the plastic where ports used to be. The face you see says what it does; the plugs live where you don't look." },
   { where: "Rear", hole: "USB window", why: "The cable plugs STRAIGHT into the ESP's own USB connector — the deck docks the board right behind this window. Power in, and factory provisioning through the same hole, lid never opened. No power module, no extra parts." },
   { where: "Left side, near the back", hole: "2 jack holes — P1 (GPIO32) · P2 (GPIO33)", why: "The wired escape hatch: P1 = 8-probe temperature bus, P2 = any sense. Tip = signal, ring = 3V3, sleeve = GND. Invisible from the front — plug in once, forget." },
   { where: "Lid, top face", hole: "1 tiny hole below the FULNEX deboss", why: "The light pipe — a clear filament stub carries the status LED to the surface. The breathing dot from the renders." },
