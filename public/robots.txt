@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /devices
+Disallow: /notifications
+Disallow: /orders
+
+Sitemap: https://fulnex-hub.vercel.app/sitemap.xml
