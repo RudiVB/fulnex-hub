@@ -14,6 +14,8 @@ const PARTS = [
   { key: "motion", label: "Motion", file: "/hardware/flx-motion-1-shell.stl" },
   { key: "leak", label: "Leak", file: "/hardware/flx-leak-1-shell.stl" },
   { key: "leakbase", label: "Leak base", file: "/hardware/flx-leak-1-base.stl" },
+  { key: "geyser", label: "Geyser box", file: "/hardware/flx-geyser-1-base.stl" },
+  { key: "geyserlid", label: "Geyser lid", file: "/hardware/flx-geyser-1-lid.stl" },
 ] as const;
 
 export function CaseViewer() {

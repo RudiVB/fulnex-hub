@@ -134,6 +134,24 @@ export default function CasePage() {
           <li className="flex gap-2"><span className="text-brass">·</span> The hub already listens for it — puck broadcasts use the beacon format the firmware ingests today.</li>
         </ul>
       </FadeUp>
+
+      {/* ---- the geyser switch ---- */}
+      <FadeUp className="mt-14" delay={0.14}>
+        <div className="text-[10px] font-mono uppercase tracking-[0.25em] text-brass mb-1">FLX-GEYSER-1 · REV A</div>
+        <h2 className="text-xl font-semibold tracking-tight mb-1">The geyser switch</h2>
+        <p className="text-mute text-sm mb-4">
+          The money product: a wall box by the DB board, wired in once by an electrician.
+          It powers itself from mains and switches the geyser's <span className="text-ink">contactor
+          coil</span> — the heavy current never enters our box. The wired probe goes into
+          the geyser's sleeve. Schedules, load-shedding dodging, "water's hot" on your phone,
+          and the biggest line on the electricity bill finally answers to someone.
+        </p>
+        <ul className="text-mute text-sm space-y-1.5">
+          <li className="flex gap-2"><span className="text-brass">·</span> Two chambers behind a full-height barrier: mains PSU + relay on one side, the ESP brain and probe jack on the other. Wires cross one small slot.</li>
+          <li className="flex gap-2"><span className="text-brass">·</span> Two cable glands (supply in, coil out) and the temp-probe jack on the bottom edge; keyholes in the back; FULNEX · dot · GEYSER on the lid.</li>
+          <li className="flex gap-2"><span className="text-brass">·</span> Installer product: four serviceable lid screws, electrician installation, and pilot shells are bench-prototypes — production moves to V0-rated plastic.</li>
+        </ul>
+      </FadeUp>
     </div>
   );
 }
