@@ -1378,7 +1378,7 @@ const PLAN_RETAIL = [
   "Soak first, always: every design runs 3 months in our own homes, then 6–12 months across 10+ beta homes, before anyone retail-buys it. Battery-life claims get proven by calendar, not calculator.",
   "Shelf 1 — our own site (year 1–2): direct sales, full margin, we learn support and returns on friendly customers.",
   "Shelf 2 — Takealot Marketplace (year 2–3): the first real 'shelf' with zero gatekeeper. Their ~10–15% commission is the cheapest retail education in SA.",
-  "Shelf 3 — regional shops (year 3–5): Eastern Cape agri co-ops (OVK/BKB-type stores) and independent hardware stores — the kas and Grow belong in a co-op like boerewors belongs at a braai, and regional buyers talk to local suppliers. Requires: GS1 barcode membership (~R2k/yr), printed retail packaging, ICASA number on the box, CPA 6-month warranty process, liability insurance in force.",
+  "Shelf 3 — regional shops (year 3–5): Eastern Cape agri co-ops (OVK/BKB-type stores) and independent hardware stores — the kas and Grow belong in a co-op like boerewors belongs at a braai, and regional buyers talk to local suppliers. Requires: GS1 barcodes (verified: single GTIN R176 once-off per product — start there; the R1,964 + R433/yr company prefix only when the range grows), printed retail packaging, ICASA number on the box (labels R1.17/unit), CPA 6-month warranty process, liability insurance in force.",
   "Shelf 4 — national chains (year 5+, only from strength): Builders/Game/Makro take 40–50% margin and demand volume, credit terms and ad spend. At R899 retail that means selling in at ~R500 — only viable in the PCB + mould era when a hub costs us <R200. Never chase this before the numbers close; national listing too early has killed more SA hardware brands than any competitor.",
 ] as const;
 
@@ -1444,11 +1444,11 @@ const PLAN_FUNDING = [
   { item: "Month 3: print-service case sets", cost: "~R700", src: "salary drip" },
   { item: "Months 2–4: sell — CMMS pricing email, first website client, care plans", cost: "R0 to start", src: "earns, not costs" },
   { item: "— THE GATE: below here, only FULNEX-earned money —", cost: "", src: "" },
-  { item: "ICASA Family A fee", cost: "~R3,500", src: "unlocked at R3,500 banked (services/CMMS/deposits)" },
+  { item: "ICASA Family A fee (verified 2025/26 tariff)", cost: "R6,526", src: "unlocked at R7k banked (services/CMMS/deposits)" },
   { item: "Printer (secondhand)", cost: "~R2,500", src: "unlocked by founder deposits" },
   { item: "AliExpress restock", cost: "~R1,700", src: "unlocked by deposits" },
   { item: "Trademark", cost: "R590", src: "first spare earned R590" },
-  { item: "ICASA Family B + PCB run + insurance", cost: "~R20k", src: "year 2, launch revenue only" },
+  { item: "ICASA Family B + PCB run + insurance", cost: "~R25k", src: "year 2, launch revenue only" },
   { item: "Salary's remaining exposure from today", cost: "≈ R1,000 + R2,500/mo cap", src: "the floor under the family budget" },
 ] as const;
 
