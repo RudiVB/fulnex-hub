@@ -46,15 +46,15 @@ module shell() {
   difference() {
     leak_solid(LR, LH, LE);
     translate([0, 0, -0.1]) leak_solid(LR - WALL, LH - TOP + 0.1, 3);
-    // LED dot, centre
-    translate([0, 0, -1]) cylinder(d = pipe_d, h = LH + 2);
+    // the LED shines through the X of the logotype
+    translate([fulnex_eye_x(4.5), 7, -1]) cylinder(d = pipe_d, h = LH + 2);
     // identity
     translate([0, 7, LH - 0.6])
       linear_extrude(0.7)
         fulnex_logo(4.5);
     translate([0, -7, LH - 0.6])
       linear_extrude(0.7)
-        text("LEAK", size = 2.8, font = "Michroma",
+        text("LEAK", size = 2.4, font = "Michroma",
              halign = "center", valign = "center", spacing = 1.5);
     // the slit: the family's parting line around the wall
     translate([0, 0, 4.2])

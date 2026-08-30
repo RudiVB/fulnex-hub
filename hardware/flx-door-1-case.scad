@@ -59,10 +59,11 @@ module bar() {
         fulnex_logo(4.6);
     translate([BL/2, BW/2 - 6, BH - 0.6])
       linear_extrude(0.7)
-        text("DOOR", size = 2.6, font = "Michroma",
+        text("DOOR", size = 2.4, font = "Michroma",
              halign = "center", valign = "center", spacing = 1.5);
-    // LED dot between the words
-    translate([BL/2, BW/2, BH - 3]) cylinder(d = pipe_d, h = 4);
+    // the LED shines through the X of the logotype
+    translate([BL/2 + fulnex_eye_x(4.6), BW/2 + 5.8, BH - 3])
+      cylinder(d = pipe_d, h = 4);
     // alignment line on the magnet-side long edge
     translate([BL/2 - 6, 0.6, BH - 4])
       rotate([90, 0, 0]) linear_extrude(0.7) square([12, 1.2]);

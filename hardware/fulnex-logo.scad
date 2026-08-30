@@ -37,17 +37,31 @@ module _fl_E() {
   translate([0, 3.9]) square([5.6, 2.2]);
   square([7, 2.2]);
 }
+// the signature: the X's strokes part around a round void at the
+// crossing — on every device, the LED light pipe shines through
+// it. The logo holds the light.
 module _fl_X() {
-  polygon([[0, 0], [2.2, 0], [7, 10], [4.8, 10]]);
-  polygon([[4.8, 0], [7, 0], [2.2, 10], [0, 10]]);
+  difference() {
+    union() {
+      polygon([[0, 0], [2.2, 0], [7, 10], [4.8, 10]]);
+      polygon([[4.8, 0], [7, 0], [2.2, 10], [0, 10]]);
+    }
+    translate([3.5, 5]) circle(r = 2.4);
+  }
 }
+
+// where the X-void sits, relative to the logo centre (for the
+// light pipe): x = +2.5 * h, y = 0
+function fulnex_eye_x(h) = 2.5 * h;
 
 // centred at the origin; h in mm. The mark: rounded modular
 // letterforms — soft, chunky, unmistakable — with the family's
 // slit cut through at large sizes.
-module fulnex_logo(h = 10, slit = undef) {
+// ONE mark, every size: the slit is always part of the logo —
+// proportional, so the identity never changes between devices.
+// (Below ~5 mm the slit prints as a hairline; that's fine.)
+module fulnex_logo(h = 10, slit = true) {
   s = h / 10;
-  cut = (slit == undef) ? (h >= 10) : slit;
   scale([s, s])
     translate([-28.5, -5])
       difference() {
@@ -60,6 +74,6 @@ module fulnex_logo(h = 10, slit = undef) {
             translate([40, 0]) _fl_E();
             translate([50, 0]) _fl_X();
           }
-        if (cut) translate([-2, 3.0]) square([61, 0.8]);
+        if (slit) translate([-2, 3.05]) square([61, 0.9]);
       }
 }

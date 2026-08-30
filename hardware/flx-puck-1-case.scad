@@ -68,9 +68,9 @@ module shell() {
     // PIR lens owns the middle
     if (lens_d > 0) {
       translate([0, 0, -1]) cylinder(d = lens_d, h = PH + 2);
-      translate([8.5, 8.5, PH - 3]) cylinder(d = pipe_d, h = 5);
+      translate([fulnex_eye_x(4.2), 10.5, PH - 3]) cylinder(d = pipe_d, h = 5);
     } else {
-      translate([0, 0, -1]) cylinder(d = pipe_d, h = PH + 2);
+      translate([fulnex_eye_x(5), 8, -1]) cylinder(d = pipe_d, h = PH + 2);
     }
     // identity, debossed into the face: FULNEX above the dot,
     // what-it-is below (prints crisp — face-down on the plate)
@@ -79,12 +79,12 @@ module shell() {
         fulnex_logo(lens_d > 0 ? 4.2 : 5);
     translate([0, lens_d > 0 ? -10.5 : (variant2 == "" ? -8 : -6.5), PH - 0.6])
       linear_extrude(0.7)
-        text(variant1, size = 2.2, font = "Michroma",
+        text(variant1, size = 2.4, font = "Michroma",
              halign = "center", valign = "center", spacing = 1.4);
     if (variant2 != "")
       translate([0, -11, PH - 0.6])
         linear_extrude(0.7)
-          text(variant2, size = 2.2, font = "Michroma",
+          text(variant2, size = 2.4, font = "Michroma",
                halign = "center", valign = "center", spacing = 1.4);
     // micro vent ring hidden under the rim (sensor breathes)
     for (a = [0 : 45 : 359])

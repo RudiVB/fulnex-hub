@@ -143,10 +143,10 @@ module lid() {
         fulnex_logo(7);
     translate([W/2, D/2 - 9, Tlid - 0.6])
       linear_extrude(0.7)
-        text("GEYSER", size = 3.2, font = "Michroma",
+        text("GEYSER", size = 2.8, font = "Michroma",
              halign = "center", valign = "center", spacing = 1.5);
-    // LED dot between the words
-    translate([W/2, D/2, -1]) cylinder(d = pipe_d, h = Tlid + 2);
+    // the LED shines through the X of the logotype
+    translate([W/2 + fulnex_eye_x(7), D/2 + 9, -1]) cylinder(d = pipe_d, h = Tlid + 2);
     // 4 countersunk screws into the base bosses
     for (p = lidboss_xy) {
       translate([p[0], p[1], -3]) cylinder(d = 2.6, h = Tlid + 4);

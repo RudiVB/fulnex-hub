@@ -234,8 +234,9 @@ module lid() {
     translate([W/2, D/2 + 7, Tlid + 3.55 - logo_depth])
       linear_extrude(logo_depth + 0.1)
         fulnex_logo(11);
-    // the LED dot — on the top face, lower-centre, like the render
-    translate([W/2, D/2 - 26, -H]) cylinder(d = pipe_d, h = H + Tlid + crown_rise + 2);
+    // the LED shines through the X of the logotype
+    translate([W/2 + fulnex_eye_x(11), D/2 + 7, -H])
+      cylinder(d = pipe_d, h = H + Tlid + crown_rise + 2);
     // screw threads into the posts, from below
     for (p = lidpost_xy)
       translate([p[0], p[1], -(H - Tf - Tlid + 3)])
