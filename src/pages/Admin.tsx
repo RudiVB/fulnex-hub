@@ -1371,7 +1371,7 @@ const PLAN_LINES = [
 const PLAN_PEOPLE = [
   { who: "Rudi", does: "Software, cloud, firmware, the site, CMMS/WMS, admin — the digital half." },
   { who: "Olof", does: "Wood, assembly, wiring, beta testing, the workshop — the physical half." },
-  { who: "Aidan (proposed)", does: "TOOLMAKER — the missing third skill. Now: assembly jigs and fixtures so every unit builds identical, QC discipline, drill templates for installs. Later: he is the injection-mould answer — moulds are literally toolmaker work, and an in-house mould could cost a fraction of the R80k quote. Bring him in on WRITTEN sweat-equity that vests: e.g. up to 10–15% earned over 2–3 years against delivered work, brothers keep control, no equity for promises — only for output. Start him on one real job (the assembly jig for the puck) and let the relationship prove itself before the paperwork grows." },
+  { who: "Aidan (an idea — not approached yet)", does: "TOOLMAKER — the third skill FULNEX will eventually want: assembly jigs and QC now, and one day the injection moulds, which are literally toolmaker work. IF the conversation ever happens and IF he's keen: start with one real paid-or-favour job (the puck assembly jig), and only talk equity after the work proves the fit — written, vesting against delivered output, brothers keep control. Until then this row is just a note, not a plan." },
 ] as const;
 
 // "Target 3 CMMS + 2 sites" means nothing without answering WHERE
@@ -1449,13 +1449,14 @@ const PLAN_YEARS = [
   },
 ] as const;
 
-// No capital. Salary gives AT MOST ~R2,500 in a month, and only
+// No capital. The budget is R1,500 in a month, maximum, and only
 // until FULNEX earns its own. Every line below the gate is unlocked
 // by revenue FULNEX has already banked — never by hoping.
 const PLAN_FUNDING = [
   { item: "Pilot parts — DONE (this was the stretch month)", cost: "~R3,300", src: "salary — never this big again" },
-  { item: "Month 2: CIPC + ICASA email + hardware-store screws", cost: "~R250", src: "salary drip" },
-  { item: "Month 3: print-service case sets", cost: "~R700", src: "salary drip" },
+  { item: "Month 2: ICASA email (R0) + hardware-store screws", cost: "~R80", src: "monthly budget" },
+  { item: "Month 3: print-service case sets", cost: "~R700", src: "monthly budget" },
+  { item: "Month 4: CIPC company (when the Pty is actually needed)", cost: "~R175", src: "monthly budget" },
   { item: "Months 2–4: sell — CMMS pricing email, first website client, care plans", cost: "R0 to start", src: "earns, not costs" },
   { item: "— THE GATE: below here, only FULNEX-earned money —", cost: "", src: "" },
   { item: "ICASA Family A fee (verified 2025/26 tariff)", cost: "R6,526", src: "unlocked at R7k banked (services/CMMS/deposits)" },
@@ -1463,7 +1464,7 @@ const PLAN_FUNDING = [
   { item: "AliExpress restock", cost: "~R1,700", src: "unlocked by deposits" },
   { item: "Trademark", cost: "R590", src: "first spare earned R590" },
   { item: "ICASA Family B + PCB run + insurance", cost: "~R25k", src: "year 2, launch revenue only" },
-  { item: "Salary's remaining exposure from today", cost: "≈ R1,000 + R2,500/mo cap", src: "the floor under the family budget" },
+  { item: "Remaining out-of-pocket from today", cost: "≈ R1,000 · R1,500/mo hard cap", src: "the floor under the household" },
 ] as const;
 
 function BusinessPlanCard() {
@@ -1471,10 +1472,10 @@ function BusinessPlanCard() {
     <FadeUp className="card p-5 sm:p-6">
       <h2 className="font-semibold mb-1">The FULNEX plan — three years, slow and true</h2>
       <p className="text-mute text-sm mb-5">
-        Fulnex (Pty) Ltd is the umbrella: one company, seven ways it earns. There is no
-        capital — at most R2,500/month from salary, and only until FULNEX feeds itself.
-        So the plan is earn-gated: services and software (sites, hosting, CMMS) earn first,
-        and every hardware step unlocks only when its money is already banked.
+        Fulnex (Pty) Ltd is the umbrella: one company, many ways it earns. There is no
+        capital — the budget is R1,500 a month, full stop, and only until FULNEX feeds
+        itself. So the plan is earn-gated: services and software (sites, hosting, CMMS)
+        earn first, and every hardware step unlocks only when its money is already banked.
       </p>
 
       <div className="text-[11px] font-mono uppercase tracking-widest text-mute mb-2">What earns the money</div>
