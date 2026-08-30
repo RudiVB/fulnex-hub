@@ -1356,6 +1356,30 @@ const PLAN_LINES = [
     what: "Biltong spice boxes and hooks for kas owners, seedling trays and grow media for Grow owners, replacement probes, branded PSUs, extra QR labels for installers. Small money that arrives monthly and keeps customers in the FULNEX shop.",
     money: "Low rand, high frequency — the till between hardware sales",
   },
+  {
+    name: "Rental & rent-to-own", state: "launch-era option",
+    what: "R99–149/mo for a monitored home instead of R3,999 upfront — the model SA actually buys (that's how DStv, security and solar sell). Hardware stays ours, revenue recurs, and a cancelled unit gets re-rented.",
+    money: "Turns one Full Home kit into R1,800/yr recurring — pays itself off inside a year, then it is all margin",
+  },
+  {
+    name: "Workshop services (Olof + Aidan)", state: "skills in hand",
+    what: "3D print jobs for locals, contract assembly, jigs and small toolmaking work for other businesses. The workshop earns between FULNEX batches instead of standing idle.",
+    money: "R500–3,000/mo drip — and every outside job sharpens the production line",
+  },
+] as const;
+
+const PLAN_PEOPLE = [
+  { who: "Rudi", does: "Software, cloud, firmware, the site, CMMS/WMS, admin — the digital half." },
+  { who: "Olof", does: "Wood, assembly, wiring, beta testing, the workshop — the physical half." },
+  { who: "Aidan (proposed)", does: "TOOLMAKER — the missing third skill. Now: assembly jigs and fixtures so every unit builds identical, QC discipline, drill templates for installs. Later: he is the injection-mould answer — moulds are literally toolmaker work, and an in-house mould could cost a fraction of the R80k quote. Bring him in on WRITTEN sweat-equity that vests: e.g. up to 10–15% earned over 2–3 years against delivered work, brothers keep control, no equity for promises — only for output. Start him on one real job (the assembly jig for the puck) and let the relationship prove itself before the paperwork grows." },
+] as const;
+
+const PLAN_RETAIL = [
+  "Soak first, always: every design runs 3 months in our own homes, then 6–12 months across 10+ beta homes, before anyone retail-buys it. Battery-life claims get proven by calendar, not calculator.",
+  "Shelf 1 — our own site (year 1–2): direct sales, full margin, we learn support and returns on friendly customers.",
+  "Shelf 2 — Takealot Marketplace (year 2–3): the first real 'shelf' with zero gatekeeper. Their ~10–15% commission is the cheapest retail education in SA.",
+  "Shelf 3 — regional shops (year 3–5): Eastern Cape agri co-ops (OVK/BKB-type stores) and independent hardware stores — the kas and Grow belong in a co-op like boerewors belongs at a braai, and regional buyers talk to local suppliers. Requires: GS1 barcode membership (~R2k/yr), printed retail packaging, ICASA number on the box, CPA 6-month warranty process, liability insurance in force.",
+  "Shelf 4 — national chains (year 5+, only from strength): Builders/Game/Makro take 40–50% margin and demand volume, credit terms and ad spend. At R899 retail that means selling in at ~R500 — only viable in the PCB + mould era when a hub costs us <R200. Never chase this before the numbers close; national listing too early has killed more SA hardware brands than any competitor.",
 ] as const;
 
 const PLAN_YEARS = [
@@ -1384,10 +1408,30 @@ const PLAN_YEARS = [
     rows: [
       "Target 400–600 homes cumulative, 15–20 CMMS firms, PCB-assembled senses, small print farm.",
       "Geyser through electrician partners. Grow launches. FULNEX for Business (CMMS + WMS + senses) sold as one story.",
+      "Takealot Marketplace becomes the second storefront. Rental/rent-to-own piloted on 20 homes.",
       "One brother's salary replaced if recurring revenue holds ~R30k/mo gross — the honest test, not a vanity number.",
-      "Injection moulds and raising money stay OPTIONS, exercised only from strength.",
     ],
     income: "R1.5m–R2.5m revenue · this is the realistic curve; the old R5m line was the good-case, not the plan",
+  },
+  {
+    year: "Years 4–5 — to Aug 2032", title: "Onto real shelves",
+    rows: [
+      "GS1 barcodes, retail packaging, warranty process — the shelf-readiness checklist below, done in order.",
+      "Regional shelves first: agri co-ops and independent hardware stores stock the kas, Grow and starter kits.",
+      "Aidan's mould era: puck and sense cases move from print farm to injection moulding — toolmaker-built or toolmaker-supervised, cases drop to cents.",
+      "Second salary replaced. National-chain conversations only start once a hub costs us under R200 and support runs without heroics.",
+    ],
+    income: "R3m–R6m revenue · recurring base (Pro + CMMS + hosting + rentals) carries the payroll",
+  },
+  {
+    year: "Year 6+ — the long game", title: "The SA name for watched things",
+    rows: [
+      "National retail if and only if the margin math survives their 40–50% cut — otherwise stay regional + online and keep the margin.",
+      "FULNEX for Business matures: CMMS + WMS + senses sold to franchise groups and factory chains.",
+      "Neighbouring markets (Namibia, Botswana share SADC type-approval recognition paths) before any overseas dream.",
+      "By here the question is not survival but shape: lifestyle company paying three salaries well, or raise and swing bigger. Both are winning.",
+    ],
+    income: "The gate for every step stays the same: paid for by customers, proven by soak time, never rushed by a date on a slide",
   },
 ] as const;
 
@@ -1433,7 +1477,17 @@ function BusinessPlanCard() {
         ))}
       </div>
 
-      <div className="text-[11px] font-mono uppercase tracking-widest text-mute mb-2">The three years</div>
+      <div className="text-[11px] font-mono uppercase tracking-widest text-mute mb-2">The people</div>
+      <div className="space-y-2 mb-6">
+        {PLAN_PEOPLE.map((p) => (
+          <div key={p.who} className="rounded-xl border border-line bg-ground/60 px-4 py-3">
+            <span className="font-medium text-sm">{p.who}</span>
+            <span className="text-mute text-xs"> — {p.does}</span>
+          </div>
+        ))}
+      </div>
+
+      <div className="text-[11px] font-mono uppercase tracking-widest text-mute mb-2">The years — as long as they take</div>
       <div className="space-y-3 mb-6">
         {PLAN_YEARS.map((y) => (
           <div key={y.year} className="rounded-xl border border-line bg-ground/60 p-4">
@@ -1448,6 +1502,15 @@ function BusinessPlanCard() {
             <div className="text-xs font-mono text-brass mt-2.5">{y.income}</div>
           </div>
         ))}
+      </div>
+
+      <div className="text-[11px] font-mono uppercase tracking-widest text-mute mb-2">The road to shop shelves — in order, no skipping</div>
+      <div className="rounded-xl border border-line bg-ground/60 p-4 mb-6">
+        <ul className="space-y-1.5">
+          {PLAN_RETAIL.map((r) => (
+            <li key={r} className="flex gap-2 text-xs text-mute"><span className="text-brass shrink-0">·</span>{r}</li>
+          ))}
+        </ul>
       </div>
 
       <div className="text-[11px] font-mono uppercase tracking-widest text-mute mb-2">Money — no capital, salary only, so this is the order things happen</div>
