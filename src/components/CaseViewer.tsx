@@ -22,6 +22,8 @@ const PARTS = [
   { key: "geyserlid", label: "Geyser lid", file: "/hardware/flx-geyser-1-lid.stl" },
   { key: "io", label: "FLX-IO", file: "/hardware/flx-io-1-base.stl" },
   { key: "iolid", label: "IO lid", file: "/hardware/flx-io-1-lid.stl" },
+  { key: "hopbody", label: "Hop body", file: "/hardware/flx-hop-1-body.stl" },
+  { key: "hoproof", label: "Hop roof", file: "/hardware/flx-hop-1-roof.stl" },
   { key: "soil", label: "Soil head", file: "/hardware/flx-soil-1-head.stl" },
   { key: "level", label: "Level bracket", file: "/hardware/flx-level-1-bracket.stl" },
 ] as const;
