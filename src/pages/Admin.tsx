@@ -1342,6 +1342,11 @@ const PLAN_LINES = [
     money: "Per-company monthly licences; one signed factory out-earns fifty pucks",
   },
   {
+    name: "Fulnex Web — sites & hosting", state: "skills in hand TODAY",
+    what: "Websites, hosting and care plans for small businesses under fulnex.cloud — the skills that built this very site, sold to butcheries, guesthouses and workshops. No regulator, no parts, no waiting: this is the stream that feeds the hardware ladder while ICASA runs.",
+    money: "R2,500–5,000 per site build · R150–300/mo hosting & care — 5 care plans ≈ the whole monthly budget doubled",
+  },
+  {
     name: "WMS + custom work", state: "in development",
     what: "The warehouse backbone, NetPulse, plugins, and paid custom IoT installs (farms, lodges, factories wanting FULNEX senses + dashboards).",
     money: "Project fees now, product revenue later — custom installs also field-test hardware",
@@ -1355,60 +1360,63 @@ const PLAN_LINES = [
 
 const PLAN_YEARS = [
   {
-    year: "Year 1 — Sep 2026 to Aug 2027", title: "Prove and launch",
+    year: "Year 1 — Sep 2026 to Aug 2027", title: "Earn first, then apply",
     rows: [
-      "Q1: pilot fleet built at Olof's (hub, door, leak day one; temp + motion when sensors land). CIPC registered, ICASA family applications in.",
-      "Q2: 10 beta homes wearing FULNEX free — their data and stories are the marketing. Printer bought from first founder deposits. Rev D cases from real measurements.",
-      "Q3: ICASA granted → founder pre-orders ship. AliExpress restock. First 5 CMMS companies paying.",
-      "Q4: public launch at R899/R349. Carrier PCB Rev A ordered from the PROVEN circuit. Target: 60 homes + 5 CMMS firms.",
+      "Months 1–2 (R2.5k budget): CIPC R175 + ICASA pre-application email (R0) + print-service case sets. Demo home alive at Olof's. CMMS beta users get the pricing email. First website client pitched.",
+      "Months 3–6: services carry the load — target 2–3 website builds + 3 CMMS companies + 5 hosting care plans ≈ R3–6k/mo of FULNEX-earned money. Beta grows to 5 homes on SuperMini units (never retail).",
+      "Months 6–9: ICASA Family A fee paid FROM EARNED REVENUE, never salary. Founder deposits open once the demo has stories to tell.",
+      "Months 9–12: if ICASA lands, first hardware ships to founders; if it drags, services and CMMS keep compounding — the year is profitable either way.",
     ],
-    income: "R250k–R400k revenue · ~R150k gross — the year pays for its own tooling",
+    income: "R60k–R120k revenue (mostly services + CMMS) · hardware is the seed, software is the harvest this year",
   },
   {
-    year: "Year 2 — to Aug 2028", title: "Scale the winners",
+    year: "Year 2 — to Aug 2029", title: "Hardware becomes real",
     rows: [
-      "PCB-assembled senses (R80–120 landed) — Olof assembles hundreds, not tens. Second printer or small print farm.",
-      "Geyser launches through electrician partners (they install, we supply — their CoC, our hardware).",
-      "Kas batches as premium product — the story product that markets everything else. Grow cabinet launches off the same autopilot: preset + light-schedule relay + seedling market.",
-      "CMMS grows on referrals: 20 companies. Pro subscription attach rate target 30% of homes.",
+      "Printer bought from deposits. AliExpress restock. Public launch at R899/R349 when ICASA + stock + printer all exist — no forced date.",
+      "Target 100 homes cumulative + 8–10 CMMS firms + a steady website/hosting book. Kas batch one sells to the biltong community.",
+      "Family B application (on the certified C3-MINI-1 module) once carrier PCB revenue-case is proven.",
+      "Geyser pilot with one friendly electrician. Grow cabinet prototype off the kas autopilot.",
     ],
-    income: "R1.5m–R2.5m revenue · ~60% blended margin — first salaries drawn",
+    income: "R400k–R800k revenue · recurring (Pro + CMMS + hosting) becomes the floor",
   },
   {
-    year: "Year 3 — to Aug 2029", title: "Become the SA name",
+    year: "Year 3 — to Aug 2030", title: "The compounding year",
     rows: [
-      "2,000+ homes cumulative. Installer/retail channel (security installers already visit every home with a drill).",
-      "WMS signs first warehouse clients — the B2B suite (CMMS + WMS + senses) sells as one FULNEX for Business story.",
-      "Injection-mould quote for the puck once volume justifies tooling (~R80k, drops case cost to cents).",
-      "Decide from strength: stay bootstrapped and profitable, or raise to accelerate — never to survive.",
+      "Target 400–600 homes cumulative, 15–20 CMMS firms, PCB-assembled senses, small print farm.",
+      "Geyser through electrician partners. Grow launches. FULNEX for Business (CMMS + WMS + senses) sold as one story.",
+      "One brother's salary replaced if recurring revenue holds ~R30k/mo gross — the honest test, not a vanity number.",
+      "Injection moulds and raising money stay OPTIONS, exercised only from strength.",
     ],
-    income: "R5m+ revenue · subscriptions + B2B are half of gross by year end",
+    income: "R1.5m–R2.5m revenue · this is the realistic curve; the old R5m line was the good-case, not the plan",
   },
 ] as const;
 
-// No capital — salary only. Rule: salary funds small fixed steps
-// (caps at ~R1.5k–3k in a month); anything bigger must be paid for
-// by customers first. The order below is the order money allows.
+// No capital. Salary gives AT MOST ~R2,500 in a month, and only
+// until FULNEX earns its own. Every line below the gate is unlocked
+// by revenue FULNEX has already banked — never by hoping.
 const PLAN_FUNDING = [
-  { item: "Pilot parts — DONE this month", cost: "~R3,300", src: "salary (the big month)" },
-  { item: "Next: CIPC company + ICASA pre-application email", cost: "R175 + R0", src: "salary — one coffee's worth" },
-  { item: "Print service, first case sets", cost: "~R700", src: "salary, next month" },
-  { item: "Open founder pre-orders (refundable deposits)", cost: "R0", src: "beta demo is the marketing" },
-  { item: "ICASA family fees", cost: "~R7k", src: "deposits + first CMMS invoice — never salary" },
-  { item: "Printer + AliExpress restock", cost: "~R6k", src: "founder deposits only" },
-  { item: "PCB Rev A run (100 boards)", cost: "~R12k", src: "launch revenue only" },
-  { item: "Trademark, insurance, buffer", cost: "~R10k", src: "launch revenue only" },
-  { item: "Salary's total exposure, ever", cost: "≈ R5k", src: "everything past this line is customer-funded" },
+  { item: "Pilot parts — DONE (this was the stretch month)", cost: "~R3,300", src: "salary — never this big again" },
+  { item: "Month 2: CIPC + ICASA email + hardware-store screws", cost: "~R250", src: "salary drip" },
+  { item: "Month 3: print-service case sets", cost: "~R700", src: "salary drip" },
+  { item: "Months 2–4: sell — CMMS pricing email, first website client, care plans", cost: "R0 to start", src: "earns, not costs" },
+  { item: "— THE GATE: below here, only FULNEX-earned money —", cost: "", src: "" },
+  { item: "ICASA Family A fee", cost: "~R3,500", src: "unlocked at R3,500 banked (services/CMMS/deposits)" },
+  { item: "Printer (secondhand)", cost: "~R2,500", src: "unlocked by founder deposits" },
+  { item: "AliExpress restock", cost: "~R1,700", src: "unlocked by deposits" },
+  { item: "Trademark", cost: "R590", src: "first spare earned R590" },
+  { item: "ICASA Family B + PCB run + insurance", cost: "~R20k", src: "year 2, launch revenue only" },
+  { item: "Salary's remaining exposure from today", cost: "≈ R1,000 + R2,500/mo cap", src: "the floor under the family budget" },
 ] as const;
 
 function BusinessPlanCard() {
   return (
     <FadeUp className="card p-5 sm:p-6">
-      <h2 className="font-semibold mb-1">The FULNEX plan — three years</h2>
+      <h2 className="font-semibold mb-1">The FULNEX plan — three years, slow and true</h2>
       <p className="text-mute text-sm mb-5">
-        Fulnex (Pty) Ltd is the umbrella: one company, four ways it earns. Hardware is the
-        face; subscriptions and B2B software are the engine. Everything below is self-funded
-        by the ladder: pilot → beta → founder pre-orders → launch.
+        Fulnex (Pty) Ltd is the umbrella: one company, seven ways it earns. There is no
+        capital — at most R2,500/month from salary, and only until FULNEX feeds itself.
+        So the plan is earn-gated: services and software (sites, hosting, CMMS) earn first,
+        and every hardware step unlocks only when its money is already banked.
       </p>
 
       <div className="text-[11px] font-mono uppercase tracking-widest text-mute mb-2">What earns the money</div>
