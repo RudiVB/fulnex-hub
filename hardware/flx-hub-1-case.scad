@@ -161,13 +161,14 @@ module base() {
         text("WATCHED", size = 3.6, font = "Arial:style=Bold",
              halign = "center", valign = "center", spacing = 1.35);
 
-    // ---- wall-hang keyholes: two, so it hangs level with the
-    //      USB edge (and its cable) pointing down ----
+    // ---- wall-hang keyholes: classic portrait — screw head in
+    //      the round entry, slide, hooked. Two of them = level,
+    //      with the USB edge (and cable) pointing down.
     for (x = [35, 85]) {
-      translate([x, 32, -0.1]) cylinder(d = 7, h = Tf + 1);
+      translate([x, 40, -0.1]) cylinder(d = 7, h = Tf + 1);
       hull() {
         translate([x, 40, -0.1]) cylinder(d = 3.4, h = 1.6);
-        translate([x, 24, -0.1]) cylinder(d = 3.4, h = 1.6);
+        translate([x, 26, -0.1]) cylinder(d = 3.4, h = 1.6);
       }
     }
 

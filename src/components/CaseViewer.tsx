@@ -16,6 +16,10 @@ const PARTS = [
   { key: "leakbase", label: "Leak base", file: "/hardware/flx-leak-1-base.stl" },
   { key: "geyser", label: "Geyser box", file: "/hardware/flx-geyser-1-base.stl" },
   { key: "geyserlid", label: "Geyser lid", file: "/hardware/flx-geyser-1-lid.stl" },
+  { key: "io", label: "FLX-IO", file: "/hardware/flx-io-1-base.stl" },
+  { key: "iolid", label: "IO lid", file: "/hardware/flx-io-1-lid.stl" },
+  { key: "soil", label: "Soil head", file: "/hardware/flx-soil-1-head.stl" },
+  { key: "level", label: "Level bracket", file: "/hardware/flx-level-1-bracket.stl" },
 ] as const;
 
 export function CaseViewer() {

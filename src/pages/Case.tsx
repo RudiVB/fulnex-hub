@@ -152,6 +152,23 @@ export default function CasePage() {
           <li className="flex gap-2"><span className="text-brass">·</span> Installer product: four serviceable lid screws, electrician installation, and pilot shells are bench-prototypes — production moves to V0-rated plastic.</li>
         </ul>
       </FadeUp>
+
+      {/* ---- pro & garden ---- */}
+      <FadeUp className="mt-14" delay={0.16}>
+        <div className="text-[10px] font-mono uppercase tracking-[0.25em] text-brass mb-1">THE PRO & GARDEN TAIL</div>
+        <h2 className="text-xl font-semibold tracking-tight mb-1">FLX-IO, soil, level</h2>
+        <p className="text-mute text-sm mb-4">
+          The last three pieces of the catalogue — where the wires work for a living.
+        </p>
+        <ul className="text-mute text-sm space-y-1.5">
+          <li className="flex gap-2"><span className="text-brass">·</span> <span className="text-ink">FLX-IO</span> — the 12-port pro module: the jack faceplate the consumer hub retired, reborn for workshops and machine rooms. Twelve senses on the front, three switched outputs at the back, powered and provisioned through the same USB window, running the same one-binary firmware.</li>
+          <li className="flex gap-2"><span className="text-brass">·</span> <span className="text-ink">Soil spike head</span> — a printed cap that seals the capacitive soil probe's electronics against rain (the reason garden probes die); blade in the dirt, cable out the top.</li>
+          <li className="flex gap-2"><span className="text-brass">·</span> <span className="text-ink">Tank level bracket</span> — aims the ultrasonic sensor straight down into a rain tank or borehole reservoir; the flange's slots forgive sloppy drilling.</li>
+        </ul>
+        <p className="text-faint text-xs font-mono mt-4">
+          nine products · every enclosure in the family designed · nothing undrawn
+        </p>
+      </FadeUp>
     </div>
   );
 }
