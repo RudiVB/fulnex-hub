@@ -53,7 +53,10 @@
 
 // the firmware owns its version — config.h no longer does
 #undef FIRMWARE_VERSION
-#define FIRMWARE_VERSION "2.0.0"
+#define FIRMWARE_VERSION "2.1.0"
+// 2.1.0: continuous BLE listening for FULNEX senses (8-slot table,
+// event-driven), FULNEX + ATC frame parsing, geyser schedule
+// (windows + target temp on the P1 probe, device-side, tz-aware)
 
 #if ENABLE_BLE_SCAN
 #include <NimBLEDevice.h>
@@ -152,6 +155,72 @@ float climT = -1000.0f, climRh = -1.0f;
 bool climExhaust = false;
 unsigned long lastClimRead = 0;
 
+// geyser schedule — heat inside the windows until the probe says
+// target, all decided on the device with local time
+bool gsEn = false;
+long gsTarget = 55;                     // deg C on the P1 probe
+long gsW[4] = {-1, -1, -1, -1};         // s1 start/end, s2 start/end (min of day)
+long tzMin = 120;                       // UTC offset minutes (SAST)
+float gsTemp = -1000.0f;
+unsigned long lastGsRead = 0;
+
+// BLE sense table — the hub is the ear: continuous passive scan,
+// every FULNEX/ATC broadcaster gets a stable slot (persisted)
+#define BLE_SLOTS 8
+struct BleSlot {
+  uint8_t mac[6];
+  uint8_t type;                         // 1 temp/hum · 2 door · 3 motion · 4 leak
+  float v1; uint8_t v2; uint8_t batt;
+  unsigned long seenMs;
+  uint8_t lastSeq;
+  bool used;
+};
+BleSlot bleSlots[BLE_SLOTS];
+volatile bool bleEvent = false;
+
+void saveBleSlots() {
+  uint8_t blob[BLE_SLOTS * 7];
+  for (int i = 0; i < BLE_SLOTS; i++) {
+    memcpy(blob + i * 7, bleSlots[i].mac, 6);
+    blob[i * 7 + 6] = bleSlots[i].used ? bleSlots[i].type : 0;
+  }
+  prefs.begin("fulnex", false);
+  prefs.putBytes("bles", blob, sizeof(blob));
+  prefs.end();
+}
+
+void loadBleSlots() {
+  uint8_t blob[BLE_SLOTS * 7];
+  prefs.begin("fulnex", true);
+  size_t n = prefs.getBytes("bles", blob, sizeof(blob));
+  prefs.end();
+  if (n != sizeof(blob)) return;
+  for (int i = 0; i < BLE_SLOTS; i++) {
+    if (blob[i * 7 + 6] > 0) {
+      memcpy(bleSlots[i].mac, blob + i * 7, 6);
+      bleSlots[i].type = blob[i * 7 + 6];
+      bleSlots[i].used = true;
+      bleSlots[i].seenMs = 0;
+    }
+  }
+}
+
+int bleSlotFor(const uint8_t* mac, uint8_t type) {
+  for (int i = 0; i < BLE_SLOTS; i++)
+    if (bleSlots[i].used && memcmp(bleSlots[i].mac, mac, 6) == 0) return i;
+  for (int i = 0; i < BLE_SLOTS; i++)
+    if (!bleSlots[i].used) {
+      memcpy(bleSlots[i].mac, mac, 6);
+      bleSlots[i].type = type;
+      bleSlots[i].used = true;
+      bleSlots[i].lastSeq = 255;
+      saveBleSlots();
+      Serial.printf("[fulnex] new sense in slot %d (type %d)\n", i, type);
+      return i;
+    }
+  return -1;
+}
+
 int sentContact = -999, sentMotion = -999, sentPower = -999;
 int liveContact = -999;
 unsigned long lastEventMs = 0;
@@ -165,6 +234,10 @@ bool savedLed2 = false, savedLed3 = false;
 
 void persistDesired() {
   prefs.begin("fulnex", false);
+  prefs.putBool("d_gsen", gsEn);
+  prefs.putLong("d_gst", gsTarget);
+  prefs.putLong("d_tz", tzMin);
+  for (int i = 0; i < 4; i++) prefs.putLong((String("d_gsw") + i).c_str(), gsW[i]);
   prefs.putInt("d_out1", savedOut1);
   prefs.putBool("d_led2", savedLed2);
   prefs.putBool("d_led3", savedLed3);
@@ -181,6 +254,10 @@ void persistDesired() {
 
 void restoreDesired() {
   prefs.begin("fulnex", true);
+  gsEn = prefs.getBool("d_gsen", false);
+  gsTarget = prefs.getLong("d_gst", 55);
+  tzMin = prefs.getLong("d_tz", 120);
+  for (int i = 0; i < 4; i++) gsW[i] = prefs.getLong((String("d_gsw") + i).c_str(), -1);
   savedOut1 = prefs.getInt("d_out1", 0);
   savedLed2 = prefs.getBool("d_led2", false);
   savedLed3 = prefs.getBool("d_led3", false);
@@ -353,7 +430,7 @@ void addReading(String& json, bool& first, int port, const String& value,
 
 // ---- current senses -> array (for send + buffering) ----------
 struct Current { uint8_t port; float value; const char* kind; };
-Current cur[12];
+Current cur[44];                        // wired + up to 8 BLE senses
 int curCount = 0;
 
 #if ENABLE_BLE_SCAN
@@ -367,84 +444,139 @@ void readSenses() {
     probes->requestTemperatures();
     int n = probes->getDeviceCount();
     if (n > 3) n = 3;
-    for (int i = 0; i < n && curCount < 12; i++) {
+    for (int i = 0; i < n && curCount < 44; i++) {
       float t = probes->getTempCByIndex(i);
       if (t > -100 && t < 125) cur[curCount++] = { (uint8_t)(1 + i), t, "temp" };
     }
   }
-  if (P.pot >= 0 && curCount < 12) {
+  if (P.pot >= 0 && curCount < 44) {
     long sum = 0;
     for (int i = 0; i < 8; i++) { sum += analogRead(P.pot); delay(2); }
     cur[curCount++] = { 4, (float)(sum / 8.0f * 100.0f / 4095.0f), "analog" };
   }
-  if (P.ct >= 0 && curCount < 12) {
+  if (P.ct >= 0 && curCount < 44) {
     int closed = digitalRead(P.ct) == LOW ? 1 : 0;
     cur[curCount++] = { 5, (float)closed, "contact" };
     sentContact = closed;
   }
-  if (P.mot >= 0 && curCount < 12) {
+  if (P.mot >= 0 && curCount < 44) {
     int m = digitalRead(P.mot) == HIGH ? 1 : 0;
     cur[curCount++] = { 6, (float)m, "motion" };
     sentMotion = m;
   }
-  if (dht && curCount < 11) {
+  if (dht && curCount < 43) {
     float t = dht->readTemperature();
     float h = dht->readHumidity();
     if (!isnan(t)) cur[curCount++] = { 8, t, "temp" };
     if (!isnan(h)) cur[curCount++] = { 9, h, "humidity" };
   }
-  if (P.soil >= 0 && curCount < 12) {
+  if (P.soil >= 0 && curCount < 44) {
     long sum = 0;
     for (int i = 0; i < 8; i++) { sum += analogRead(P.soil); delay(2); }
     cur[curCount++] = { 10, (float)(100.0f - sum / 8.0f * 100.0f / 4095.0f), "moisture" };
   }
-  if (P.soil2 >= 0 && curCount < 12) {
+  if (P.soil2 >= 0 && curCount < 44) {
     long sum = 0;
     for (int i = 0; i < 8; i++) { sum += analogRead(P.soil2); delay(2); }
     cur[curCount++] = { 12, (float)(100.0f - sum / 8.0f * 100.0f / 4095.0f), "moisture" };
   }
-  if (P.ut >= 0 && P.ue >= 0 && curCount < 12) {
+  if (P.ut >= 0 && P.ue >= 0 && curCount < 44) {
     digitalWrite(P.ut, LOW); delayMicroseconds(4);
     digitalWrite(P.ut, HIGH); delayMicroseconds(10);
     digitalWrite(P.ut, LOW);
     unsigned long us = pulseIn(P.ue, HIGH, 30000);
     if (us > 0) cur[curCount++] = { 11, us / 58.0f, "level" };
   }
-  if (P.vb >= 0 && curCount < 12) {
+  if (P.vb >= 0 && curCount < 44) {
     int p = analogRead(P.vb) > 1000 ? 1 : 0;
     cur[curCount++] = { 20, (float)p, "contact" };
     sentPower = p;
   }
 
   // outputs report back what they're actually doing
-  if (P.o1 >= 0 && curCount < 12) cur[curCount++] = { 21, (float)appliedOut1, "analog" };
-  if (P.o2 >= 0 && curCount < 12) cur[curCount++] = { 22, (float)appliedOut2, "contact" };
-  if (P.o3 >= 0 && curCount < 12) cur[curCount++] = { 23, (float)appliedOut3, "contact" };
+  if (P.o1 >= 0 && curCount < 44) cur[curCount++] = { 21, (float)appliedOut1, "analog" };
+  if (P.o2 >= 0 && curCount < 44) cur[curCount++] = { 22, (float)appliedOut2, "contact" };
+  if (P.o3 >= 0 && curCount < 44) cur[curCount++] = { 23, (float)appliedOut3, "contact" };
 
 #if ENABLE_BLE_SCAN
-  bleScanInto();
+  // every sense heard in the last 5 minutes joins the report:
+  // slot i owns ports 30+i*3 (value), +1 (extra), +2 (battery)
+  for (int i = 0; i < BLE_SLOTS && curCount < 41; i++) {
+    if (!bleSlots[i].used || bleSlots[i].seenMs == 0) continue;
+    if (millis() - bleSlots[i].seenMs > 5UL * 60UL * 1000UL) continue;
+    uint8_t base = 30 + i * 3;
+    switch (bleSlots[i].type) {
+      case 1:
+        cur[curCount++] = { base, bleSlots[i].v1, "temp" };
+        cur[curCount++] = { (uint8_t)(base + 1), (float)bleSlots[i].v2, "humidity" };
+        break;
+      case 2: cur[curCount++] = { base, bleSlots[i].v1, "contact" }; break;
+      case 3: cur[curCount++] = { base, bleSlots[i].v1, "motion" }; break;
+      case 4: cur[curCount++] = { base, bleSlots[i].v1 > 0 ? 100.0f : 0.0f, "moisture" }; break;
+    }
+    if (bleSlots[i].batt > 0 && curCount < 44)
+      cur[curCount++] = { (uint8_t)(base + 2), (float)bleSlots[i].batt, "battery" };
+  }
 #endif
 }
 
 #if ENABLE_BLE_SCAN
-// Xiaomi ATC1441 advertisement: svc data 0x181A
-void bleScanInto() {
-  NimBLEScan* scan = NimBLEDevice::getScan();
-  scan->setActiveScan(false);
-  NimBLEScanResults results = scan->getResults(3000, false);
-  for (int i = 0; i < results.getCount() && curCount < 12; i++) {
-    const NimBLEAdvertisedDevice* d = results.getDevice(i);
-    if (!d->haveServiceData()) continue;
-    std::string sd = d->getServiceData(NimBLEUUID((uint16_t)0x181A));
-    if (sd.length() >= 11) {
-      int16_t t = (int8_t)sd[6] << 8 | (uint8_t)sd[7];
-      cur[curCount++] = { 30, t / 10.0f, "temp" };
-      if (curCount < 12) cur[curCount++] = { 31, (float)(uint8_t)sd[8], "humidity" };
-      if (curCount < 12) cur[curCount++] = { 32, (float)(uint8_t)sd[9], "battery" };
-      break;
+// The ear: continuous passive scan; every FULNEX frame (and any
+// ATC-format puck) lands in its slot the moment it's shouted.
+class FulnexScanCB : public NimBLEScanCallbacks {
+  void onResult(const NimBLEAdvertisedDevice* d) override {
+    uint8_t mac[6];
+    memcpy(mac, d->getAddress().getBase()->val, 6);
+
+    // FULNEX frame in manufacturer data
+    if (d->haveManufacturerData()) {
+      std::string md = d->getManufacturerData();
+      if (md.length() >= 11 && md[2] == 'F' && md[3] == 'X') {
+        uint8_t type = (uint8_t)md[5];
+        int slot = bleSlotFor(mac, type);
+        if (slot < 0) return;
+        uint8_t seqv = (uint8_t)md[10];
+        if (seqv == bleSlots[slot].lastSeq) return;      // same shout
+        bleSlots[slot].lastSeq = seqv;
+        int16_t v1 = (int16_t)((uint8_t)md[6] | ((uint8_t)md[7] << 8));
+        float value = type == 1 ? v1 / 10.0f : (v1 >= 5 ? 1.0f : 0.0f);
+        bool changed = bleSlots[slot].type >= 2 && value != bleSlots[slot].v1
+                       && bleSlots[slot].seenMs != 0;
+        bleSlots[slot].v1 = value;
+        bleSlots[slot].v2 = (uint8_t)md[8];
+        bleSlots[slot].batt = (uint8_t)md[9];
+        bleSlots[slot].seenMs = millis();
+        if (changed) bleEvent = true;                    // door opened etc.
+        return;
+      }
+    }
+    // ATC 0x181A (Xiaomi pucks, and our TEMP compat frame)
+    if (d->haveServiceData()) {
+      std::string sd = d->getServiceData(NimBLEUUID((uint16_t)0x181A));
+      if (sd.length() >= 11) {
+        int slot = bleSlotFor(mac, 1);
+        if (slot < 0) return;
+        int16_t t = (int8_t)sd[6] << 8 | (uint8_t)sd[7];
+        bleSlots[slot].v1 = t / 10.0f;
+        bleSlots[slot].v2 = (uint8_t)sd[8];
+        bleSlots[slot].batt = (uint8_t)sd[9];
+        bleSlots[slot].seenMs = millis();
+      }
     }
   }
-  scan->clearResults();
+};
+FulnexScanCB fulnexScanCB;
+
+void startBleListening() {
+  NimBLEDevice::init("");
+  NimBLEScan* scan = NimBLEDevice::getScan();
+  scan->setScanCallbacks(&fulnexScanCB, false);
+  scan->setActiveScan(false);
+  scan->setInterval(160);                // 100 ms
+  scan->setWindow(48);                   // 30 ms — plays nice with Wi-Fi
+  scan->setDuplicateFilter(false);
+  scan->start(0, false, true);           // forever
+  Serial.println("[fulnex] BLE ear open — listening for senses");
 }
 #endif
 
@@ -482,6 +614,19 @@ void applyControls(const String& body) {
   v = numFromBody(body, "\"cl_air_rest\":", -1); if (v >= 0 && v <= 240 && v != climAirRest) { climAirRest = v; climChanged = true; }
   if (climRhLo >= climRhHi) climRhLo = climRhHi - 1;
   if (climChanged) persistDesired();
+
+  // geyser schedule settings
+  bool gsChanged = false;
+  if (body.indexOf("\"g_en\":true") >= 0 && !gsEn)  { gsEn = true;  gsChanged = true; }
+  if (body.indexOf("\"g_en\":false") >= 0 && gsEn)  { gsEn = false; gsChanged = true; setOut1Duty(0); }
+  v = numFromBody(body, "\"g_t\":", -1);    if (v >= 30 && v <= 75 && v != gsTarget) { gsTarget = v; gsChanged = true; }
+  v = numFromBody(body, "\"tz\":", -9999);  if (v >= -720 && v <= 840 && v != tzMin) { tzMin = v; gsChanged = true; }
+  const char* gk[4] = { "\"g_s1a\":", "\"g_s1b\":", "\"g_s2a\":", "\"g_s2b\":" };
+  for (int i = 0; i < 4; i++) {
+    v = numFromBody(body, gk[i], -9999);
+    if (v >= -1 && v < 1440 && v != gsW[i]) { gsW[i] = v; gsChanged = true; }
+  }
+  if (gsChanged) persistDesired();
 
   if (body.indexOf("\"led\":true") >= 0 || body.indexOf("\"led\":false") >= 0) {
     bool ledOn = body.indexOf("\"led\":true") >= 0;
@@ -642,6 +787,41 @@ void climateTick() {
   }
 }
 
+// ---- geyser schedule -----------------------------------------
+// Heat (output 1 = contactor coil) inside the windows until the
+// P1 probe reads the target. Local time = NTP + tz. Fully on the
+// device: load-shedding, dead routers, none of it matters.
+void scheduleTick() {
+  if (!gsEn) return;
+  time_t now = time(nullptr);
+  if (now < 1700000000) return;          // no NTP yet
+  long mod = ((now + tzMin * 60) % 86400) / 60;   // minutes of local day
+  bool inWindow =
+    (gsW[0] >= 0 && gsW[1] >= 0 && mod >= gsW[0] && mod < gsW[1]) ||
+    (gsW[2] >= 0 && gsW[3] >= 0 && mod >= gsW[2] && mod < gsW[3]);
+
+  if (probes && millis() - lastGsRead > 30000) {
+    lastGsRead = millis();
+    probes->requestTemperatures();
+    float t = probes->getTempCByIndex(0);
+    if (t > -100 && t < 125) gsTemp = t;
+  }
+  // with a probe: heat to target inside the window; without one,
+  // the window alone decides
+  bool wantHeat = inWindow && (gsTemp < -100 || gsTemp < (float)gsTarget - 0.5f);
+  int want = wantHeat ? 100 : 0;
+  if (want != appliedOut1) {
+    setOut1Duty(want);
+    Serial.printf("[fulnex] geyser %s (%.1f C, target %ld)\n",
+                  want ? "HEATING" : "off", gsTemp, gsTarget);
+    if (millis() - lastEventMs > 2000) {
+      lastEventMs = millis();
+      report();
+      lastReport = millis();
+    }
+  }
+}
+
 // ---- events --------------------------------------------------
 void checkEvents() {
   int nowContact = -999;
@@ -659,6 +839,7 @@ void checkEvents() {
       (digitalRead(P.mot) == HIGH ? 1 : 0) != sentMotion) changed = true;
   if (P.vb >= 0 && sentPower != -999 &&
       (analogRead(P.vb) > 1000 ? 1 : 0) != sentPower) changed = true;
+  if (bleEvent) { changed = true; bleEvent = false; }
   if (changed && millis() - lastEventMs > 2000) {
     lastEventMs = millis();
     Serial.println("[fulnex] event -> immediate report");
@@ -940,7 +1121,8 @@ void setup() {
 #endif
 
 #if ENABLE_BLE_SCAN
-  NimBLEDevice::init("");
+  loadBleSlots();
+  startBleListening();
 #endif
 
   // ---- loop watchdog: 5 min, detached during OTA -------------
@@ -992,6 +1174,7 @@ void loop() {
 
   checkEvents();
   climateTick();
+  scheduleTick();
 
   if (millis() - lastReport >= intervalMs) {
     lastReport = millis();

@@ -194,6 +194,7 @@ export default function Admin() {
             </p>
             <CaseViewer />
           </FadeUp>
+          <FirmwareCard />
           <RunbookCard />
           <InventoryCard parts={parts} products={products} onChange={load} />
           <DownloadsCard fw={fw} />
@@ -579,11 +580,12 @@ function BuildDiagramCard() {
     <FadeUp className="card p-5" delay={0.05}>
       <div className="flex items-center gap-3 mb-1">
         <span className="icon-chip"><Hammer size={17} strokeWidth={1.75} /></span>
-        <h2 className="font-medium">FLX-HUB-1 · build diagram</h2>
+        <h2 className="font-medium">FLX-IO-1 · wiring diagram</h2>
       </div>
       <p className="text-mute text-sm mb-3">
-        Rev A wiring at a glance — every jack is 3V3 · signal · GND. GPIO21/22 stay
-        internal (I²C). Outputs O1–O3 drive the relays.
+        The pro module's map — every jack 3V3 · signal · GND, outputs O1–O3 drive the
+        relays. (The consumer hub is sealed: rear P1/P2 only, everything else arrives
+        over Bluetooth into slots 30+.)
       </p>
       <div className="overflow-x-auto">
         <svg viewBox="0 0 460 280" className="w-full min-w-[420px]">
@@ -633,14 +635,82 @@ function BuildDiagramCard() {
   );
 }
 
+// What runs on what, and everything it can do.
+const FIRMWARES = [
+  {
+    name: "fulnex_hub 2.1.0",
+    runs: "Hub · FLX-IO · Geyser · Cabinets — every Wi-Fi device, one binary",
+    images: [
+      "fulnex_hub 2.1.0 BLE (min_spiffs) — new hubs/IO, flashed over USB; the ear is on",
+      "fulnex_hub 2.1.0 standard — OTA-safe for every existing unit (kas etc.)",
+    ],
+    features: [
+      "NVS identity + runtime port map (desired.pm) — provision over serial, rewire from the cloud",
+      "Reports every 60 s · events within 2 s · offline buffer with true-timestamp backfill",
+      "Instant MQTT commands (~1 s) · cloud OTA · rollback-safe · loop watchdog",
+      "Climate autopilot on-device (biltong/grow: RH hysteresis, over-temp, airflow cycling)",
+      "Geyser schedule on-device: two daily windows + target temp on the P1 probe, timezone-aware, survives power cuts",
+      "Bluetooth ear (BLE build): continuous passive scan, 8 sense slots auto-mapped to ports 30+, door/motion events reported within seconds, ATC pucks understood too",
+      "Desired state persists in flash · QC jig mode on BOOT-held power-up · branded setup portal · factory reset",
+    ],
+  },
+  {
+    name: "flx_sense 1.0.0",
+    runs: "Every Bluetooth sense — puck, door, motion, leak (ESP32-C3)",
+    images: ["flx_sense 1.0.0 — one sketch; the variant is provisioned, not compiled"],
+    features: [
+      "Deep-sleep beacon: wake → read → one 1.5 s broadcast → sleep (~a year on a coin cell)",
+      "TEMP: AHT10/20 every 60 s, plus ATC-compatible frames so fw 2.0 hubs already hear it",
+      "DOOR / MOTION / LEAK: instant wake on the event + a 10-minute heartbeat",
+      "FULNEX frame: type, value, battery, sequence — the hub dedupes and slots by radio address",
+      "Serial provisioning in the first 10 s: FULNEX-SENSE type=2 name=FLX-D001",
+    ],
+  },
+];
+
+function FirmwareCard() {
+  return (
+    <FadeUp className="card p-5" delay={0.055}>
+      <div className="flex items-center gap-3 mb-1">
+        <span className="icon-chip"><Cpu size={17} strokeWidth={1.75} /></span>
+        <h2 className="font-medium">Firmware — what runs on what</h2>
+      </div>
+      <p className="text-mute text-sm mb-4">
+        Two codebases cover the whole catalogue. Wi-Fi devices share one binary and differ
+        only by NVS; senses share the other and differ only by a provisioned type.
+      </p>
+      <div className="space-y-4">
+        {FIRMWARES.map((f) => (
+          <div key={f.name} className="border border-line rounded-xl px-4 py-3.5">
+            <div className="flex flex-wrap items-baseline gap-2 mb-0.5">
+              <span className="font-mono text-brass text-sm">{f.name}</span>
+              <span className="text-mute text-xs">{f.runs}</span>
+            </div>
+            <div className="text-faint text-[11px] font-mono mb-2">
+              {f.images.map((i) => <div key={i}>· {i}</div>)}
+            </div>
+            <ul className="grid md:grid-cols-2 gap-x-6 gap-y-1">
+              {f.features.map((x) => (
+                <li key={x} className="text-mute text-xs flex gap-2 leading-relaxed">
+                  <span className="text-brass shrink-0">·</span>{x}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+    </FadeUp>
+  );
+}
+
 // The procedure: parts on the bench -> customer's phone buzzing.
 const RUNBOOK: { t: string; d: string; who: "Olof" | "Rudi" | "Customer" }[] = [
   { who: "Olof", t: "Stock check", d: "Parts list below must say ≥ 1 buildable. Pull one unit's parts onto the bench." },
-  { who: "Olof", t: "Print the case", d: "base + lid STLs from hardware/, matte black PETG, lid printed logo-face-down on PEI. Press the clear light-pipe stub into the lid." },
-  { who: "Olof", t: "Assemble", d: "Press the 12 sense jacks + P10 into the faceplate (nuts inside). Mount board, relays, PSU on the standoffs. Route output cables through the rear grommets. Leave the lid off." },
-  { who: "Olof", t: "Flash the generic image", d: "USB in, upload fulnex_hub-2.0.0.bin (or compile the sketch with configs/GENERIC.h). Same binary for every unit, forever." },
-  { who: "Rudi", t: "Mint the unit", d: "Provision card above: pick the product, Mint. The serial, key, claim code and QR exist from this moment." },
-  { who: "Olof", t: "Provision over serial", d: "Paste the FULNEX-PROVISION line into the serial monitor at 115200. The board reboots as its serial. FULNEX-INFO to verify." },
+  { who: "Olof", t: "Print the product's parts", d: "STLs from /case or downloads below — hub base/lid/deck, puck shell/base, door pair, IO, geyser… matte black PETG, faces printed down for crisp deboss. Light-pipe stub where the design has a dot." },
+  { who: "Olof", t: "Assemble per the dossier", d: "Every product's holes, homes and steps are on /case. Hubs: snap the DevKit into the deck, deck onto standoffs, jacks at the rear. IO: 12 jacks up front. Senses: cell in the pocket, C3 in its rails. Lid off for now." },
+  { who: "Olof", t: "Flash the right image", d: "Hubs and IO (new units): fulnex_hub 2.1.0 BLE build, min_spiffs partition. Geyser + legacy OTA units: the standard 2.1.0 build. Pucks/door/motion/leak: flx_sense 1.0.0 on the ESP32-C3." },
+  { who: "Rudi", t: "Mint the unit", d: "Provision card above: pick the product, Mint. The serial, key, claim code and QR exist from this moment. (Bluetooth senses skip this — the hub knows them by radio address; the label still gets printed.)" },
+  { who: "Olof", t: "Provision over serial", d: "Wi-Fi devices: paste the FULNEX-PROVISION line at 115200 — through the hub's rear window, lid already on. Senses: FULNEX-SENSE type=1..4 name=FLX-Pxxx in the first 10 s after power-up." },
   { who: "Olof", t: "QC — the GPIO25 rule", d: "Hold BOOT while power-cycling → jig mode: every output clicks in turn, every input prints every 2 s. No pin unproven. Reset to exit." },
   { who: "Olof", t: "Cloud smoke test", d: "Join the FULNEX-<serial> hotspot, connect it to workshop Wi-Fi, watch it turn green in Fleet. Toggle an output from the dashboard and see the echo come back." },
   { who: "Olof", t: "Wipe Wi-Fi, keep identity", d: "Hold BOOT 5 s (factory reset). The customer gets a fresh setup portal; serial and key stay in NVS." },

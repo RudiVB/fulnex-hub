@@ -55,36 +55,49 @@ module bar() {
     // face is at z = BH (printed face-down): deboss identity
     translate([BL/2, BW/2 + 5.5, BH - 0.6])
       linear_extrude(0.7)
-        text("FULNEX", size = 3.2, font = "Arial:style=Bold",
-             halign = "center", valign = "center", spacing = 1.3);
+        text("FULNEX", size = 3.2, font = "Michroma",
+             halign = "center", valign = "center", spacing = 1.6);
     translate([BL/2, BW/2 - 6, BH - 0.6])
       linear_extrude(0.7)
-        text("DOOR", size = 2.6, font = "Arial:style=Bold",
+        text("DOOR", size = 2.6, font = "Michroma",
              halign = "center", valign = "center", spacing = 1.5);
     // LED dot between the words
     translate([BL/2, BW/2, BH - 3]) cylinder(d = pipe_d, h = 4);
     // alignment line on the magnet-side long edge
     translate([BL/2 - 6, 0.6, BH - 4])
       rotate([90, 0, 0]) linear_extrude(0.7) square([12, 1.2]);
-  }
-  // screw bosses for the back plate
-  for (x = [10, BL - 10])
-    translate([x, BW/2, 0])
+    // snap pockets in the long walls — the back plate's spring
+    // tabs click in; squeeze the tabs to open. No tools.
+    for (x = [12, BL - 21]) {
+      translate([x, BWALL - 0.9, 2.0]) cube([9, 1.0, 1.8]);
+      translate([x, BW - BWALL - 0.1, 2.0]) cube([9, 1.0, 1.8]);
+    }
+    // the slit: a cosmetic parting groove wrapping the bar near
+    // its foot — the precision line from the renders
+    intersection() {
       difference() {
-        cylinder(d = 6, h = BH - BTOP - 0.4);
-        translate([0, 0, 2]) cylinder(d = 1.7, h = BH);
+        translate([0, 0, -1]) linear_extrude(BH + 2) pill(BL, BW, BR);
+        translate([0, 0, -2]) linear_extrude(BH + 4) offset(-0.8) pill(BL, BW, BR);
       }
+      translate([9.4, -1, -1]) cube([1.3, BW + 2, BH + 3]);
+    }
+    translate([9.4, 3, BH - 0.7]) cube([1.3, BW - 6, 1]);
+  }
 }
 
 /* ============ BACK PLATE ============ */
 module back() {
+  // spring tabs — bump outward at the top, they click into the
+  // bar's wall pockets; flex to release for a battery swap
+  for (x = [12.5, BL - 20.5]) {
+    for (y = [BWALL + 0.35, BW - BWALL - 1.55]) {
+      translate([x, y, 0]) cube([8, 1.2, 3.2]);
+      translate([x, y < BW/2 ? y - 0.6 : y + 1.2, 2.1])
+        cube([8, 0.6, 1.0]);
+    }
+  }
   difference() {
     linear_extrude(BACK_T) offset(-BWALL - 0.25) pill(BL, BW, BR);
-    // screws through, countersunk
-    for (x = [10, BL - 10]) {
-      translate([x, BW/2, -0.1]) cylinder(d = 2.4, h = BACK_T + 1);
-      translate([x, BW/2, -0.01]) cylinder(d1 = 4.6, d2 = 2.4, h = 1.2);
-    }
     // keyhole, centre
     translate([BL/2 + 3, BW/2, -0.1]) cylinder(d = 6.5, h = BACK_T + 1);
     hull() {
@@ -125,6 +138,15 @@ module magnet() {
     // the matching alignment line on the bar-facing edge
     translate([ML/2 - 6, 0.6, MH - 4])
       rotate([90, 0, 0]) linear_extrude(0.7) square([12, 1.2]);
+    // its own parting slit, mid-face, matching the bar's
+    intersection() {
+      difference() {
+        translate([0, 0, -1]) linear_extrude(MH + 2) pill(ML, MW, 5);
+        translate([0, 0, -2]) linear_extrude(MH + 4) offset(-0.8) pill(ML, MW, 5);
+      }
+      translate([ML/2 - 0.65, -1, -1]) cube([1.3, MW + 2, MH + 3]);
+    }
+    translate([ML/2 - 0.65, 2, MH - 0.7]) cube([1.3, MW - 4, 1]);
   }
 }
 

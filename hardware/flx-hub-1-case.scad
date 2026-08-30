@@ -154,11 +154,11 @@ module base() {
     // ---- tagline, debossed into the clean front face ----
     translate([W/2, 0.6, 21.5]) rotate([90, 0, 0])
       linear_extrude(0.7)
-        text("YOUR THINGS,", size = 3.6, font = "Arial:style=Bold",
+        text("YOUR THINGS,", size = 3.6, font = "Michroma",
              halign = "center", valign = "center", spacing = 1.35);
     translate([W/2, 0.6, 15]) rotate([90, 0, 0])
       linear_extrude(0.7)
-        text("WATCHED", size = 3.6, font = "Arial:style=Bold",
+        text("WATCHED", size = 3.6, font = "Michroma",
              halign = "center", valign = "center", spacing = 1.35);
 
     // ---- wall-hang keyholes: classic portrait — screw head in
@@ -175,6 +175,14 @@ module base() {
     // ---- QR label recess, underside ----
     translate([W/2 - label_w/2, D/2 - label_h/2, -0.01])
       cube([label_w, label_h, label_t]);
+
+    // ---- the slit: the family's parting line, wrapping the body ----
+    translate([0, 0, 5])
+      linear_extrude(1.2)
+        difference() {
+          offset(1) squircle(W, D, R);
+          offset(-0.8) squircle(W, D, R);
+        }
   }
 
   // base inscription beside the label recess
@@ -182,7 +190,7 @@ module base() {
     rotate([180, 0, 0])
       linear_extrude(0.5)
         text("FLX-HUB-1  ·  REV B", size = 3.2,
-             font = "Arial:style=Bold", halign = "center");
+             font = "Michroma", halign = "center");
 }
 
 /* ============ LID ============ */
@@ -220,7 +228,7 @@ module lid() {
     // FULNEX across the face
     translate([W/2, D/2 + 6, Tlid + crown_rise - logo_depth])
       linear_extrude(logo_depth + 0.1)
-        text(logo, size = 12, font = "Arial:style=Bold",
+        text(logo, size = 12, font = "Michroma",
              halign = "center", valign = "center", spacing = 1.3);
     // the LED dot — on the top face, lower-centre, like the render
     translate([W/2, D/2 - 26, -H]) cylinder(d = pipe_d, h = H + Tlid + crown_rise + 2);

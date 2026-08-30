@@ -90,6 +90,12 @@ export default function DevicePage() {
         ...(typeof d.cl_air_on === "number" ? { cl_air_on: d.cl_air_on } : {}),
         ...(typeof d.cl_air_rest === "number" ? { cl_air_rest: d.cl_air_rest } : {}),
         ...(typeof d.pm === "string" && d.pm ? { pm: d.pm } : {}),
+        g_en: d.g_en === true,
+        ...Object.fromEntries(
+          ["g_t", "tz", "g_s1a", "g_s1b", "g_s2a", "g_s2b"]
+            .filter((k) => typeof d[k] === "number")
+            .map((k) => [k, d[k]]),
+        ),
         ...overrides,
       };
       c.publish(

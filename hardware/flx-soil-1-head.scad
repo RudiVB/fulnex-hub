@@ -34,9 +34,15 @@ difference() {
   translate([(OW - bw)/2 + 2, (OD - bt)/2 - 1.4, -0.1]) cube([bw - 4, bt + 2.8, depth - 4]);
   // cable out the top
   translate([OW/2, OD/2, OH - 4]) cylinder(d = cable_d, h = 5);
+  // the slit: the family's parting line around the head
+  translate([0, 0, OH - 10])
+    difference() {
+      translate([-1, -1, 0]) cube([OW + 2, OD + 2, 1.1]);
+      translate([0.8, 0.8, -0.5]) rbox(OW - 1.6, OD - 1.6, 2.1, R - 0.8);
+    }
   // identity on the face
   translate([OW/2, 1.0, OH/2 + 2])
     rotate([90, 90, 0]) linear_extrude(1.1)
-      text("FULNEX · SOIL", size = 2.6, font = "Arial:style=Bold",
-           halign = "center", valign = "center", spacing = 1.3);
+      text("FULNEX · SOIL", size = 2.6, font = "Michroma",
+           halign = "center", valign = "center", spacing = 1.6);
 }

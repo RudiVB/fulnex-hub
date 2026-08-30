@@ -129,8 +129,9 @@ export default function CasePage() {
           it shouts). All in the viewer above.
         </p>
         <ul className="text-mute text-sm space-y-1.5">
-          <li className="flex gap-2"><span className="text-brass">·</span> Base screws up into the shell (2× M2) — cell pocket, board pillars, vent slots, and a keyhole so it hangs on one screw or sticks with a tape pad.</li>
-          <li className="flex gap-2"><span className="text-brass">·</span> Shell prints face-down: flawless dome, crisp deboss, no supports.</li>
+          <li className="flex gap-2"><span className="text-brass">·</span> <span className="text-ink">Twist-lock base — no tools, ever:</span> three lugs enter the rim notches, a small twist locks it. Battery flat in a year? Twist open, swap the coin cell, twist shut. Same on motion and leak; the door bar's back clicks in on spring tabs.</li>
+          <li className="flex gap-2"><span className="text-brass">·</span> Cell pocket, board pillars, vent slots, and a keyhole so it hangs on one screw or sticks with a tape pad.</li>
+          <li className="flex gap-2"><span className="text-brass">·</span> Shell prints face-down: flawless dome, and the wordmark is debossed in Michroma — the same letterforms as the site and the app.</li>
           <li className="flex gap-2"><span className="text-brass">·</span> The hub already listens for it — puck broadcasts use the beacon format the firmware ingests today.</li>
         </ul>
       </FadeUp>

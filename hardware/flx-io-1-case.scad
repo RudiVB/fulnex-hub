@@ -125,6 +125,14 @@ module base() {
       translate([98 + i * 6, 52, -1])
         linear_extrude(Tf + 2) squircle(3, 14, 1.4);
 
+    // ---- the slit: the family's parting line ----
+    translate([0, 0, 5])
+      linear_extrude(1.2)
+        difference() {
+          offset(1) squircle(W, D, R);
+          offset(-0.8) squircle(W, D, R);
+        }
+
     // ---- QR label recess ----
     translate([W/2 - label_w/2, D/2 - label_h/2, -0.01])
       cube([label_w, label_h, label_t]);
@@ -145,11 +153,11 @@ module lid() {
     }
     translate([W/2, D/2 + 9, Tlid - 0.6])
       linear_extrude(0.7)
-        text("FULNEX", size = 4.4, font = "Arial:style=Bold",
-             halign = "center", valign = "center", spacing = 1.35);
+        text("FULNEX", size = 4.4, font = "Michroma",
+             halign = "center", valign = "center", spacing = 1.6);
     translate([W/2, D/2 - 10, Tlid - 0.6])
       linear_extrude(0.7)
-        text("FLX-IO", size = 3.4, font = "Arial:style=Bold",
+        text("FLX-IO", size = 3.4, font = "Michroma",
              halign = "center", valign = "center", spacing = 1.5);
     translate([W/2, D/2, -1]) cylinder(d = pipe_d, h = Tlid + 2);
     for (p = lidboss_xy) {

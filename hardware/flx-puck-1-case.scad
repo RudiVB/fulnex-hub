@@ -75,30 +75,38 @@ module shell() {
     // what-it-is below (prints crisp — face-down on the plate)
     translate([0, lens_d > 0 ? 10.5 : 7.5, PH - 0.6])
       linear_extrude(0.7)
-        text("FULNEX", size = lens_d > 0 ? 3.2 : 3.8, font = "Arial:style=Bold",
-             halign = "center", valign = "center", spacing = 1.35);
+        text("FULNEX", size = lens_d > 0 ? 3.2 : 3.8, font = "Michroma",
+             halign = "center", valign = "center", spacing = 1.6);
     translate([0, lens_d > 0 ? -10.5 : (variant2 == "" ? -8 : -6.5), PH - 0.6])
       linear_extrude(0.7)
-        text(variant1, size = 2.2, font = "Arial:style=Bold",
+        text(variant1, size = 2.2, font = "Michroma",
              halign = "center", valign = "center", spacing = 1.4);
     if (variant2 != "")
       translate([0, -11, PH - 0.6])
         linear_extrude(0.7)
-          text(variant2, size = 2.2, font = "Arial:style=Bold",
+          text(variant2, size = 2.2, font = "Michroma",
                halign = "center", valign = "center", spacing = 1.4);
     // micro vent ring hidden under the rim (sensor breathes)
     for (a = [0 : 45 : 359])
       rotate([0, 0, a])
         translate([PR - WALL/2 - 1, 0, -0.1])
           cylinder(d = 2.2, h = 2.5);
-  }
-  // screw bosses for the base, either side on Y
-  for (s = [-1, 1])
-    translate([0, s * boss_r, 0])
+    // the slit: the family's parting line around the wall
+    translate([0, 0, 4.5])
       difference() {
-        cylinder(d = 6.5, h = PH - TOP - 0.4);
-        translate([0, 0, 2]) cylinder(d = 1.7, h = PH);   // M2 self-tap
+        cylinder(r = PR + 1, h = 1.1);
+        translate([0, 0, -0.5]) cylinder(r = PR - 0.8, h = 2.1);
       }
+    // twist-lock: three rim entry notches, each leading into a
+    // blind side-groove — base lugs in, small twist, held.
+    // No tools: twist back to swap the battery.
+    for (a = [15, 135, 255]) {
+      rotate([0, 0, a])
+        translate([PR - WALL - 1.7, -3.6, -0.1]) cube([2.0, 7.2, 3.0]);
+      rotate([0, 0, a + 14])
+        translate([PR - WALL - 1.7, -3.6, 0.7]) cube([2.0, 9.5, 2.3]);
+    }
+  }
   // MOTION: retention ring under the ceiling grips the AM312 lens
   if (lens_d > 0)
     translate([0, 0, PH - TOP - 4])
@@ -110,13 +118,13 @@ module shell() {
 
 /* ============ BASE ============ */
 module base() {
+  // three lugs — they enter the shell's notches and twist into
+  // the grooves; grip the rim and twist back to open
+  for (a = [15, 135, 255])
+    rotate([0, 0, a])
+      translate([BASE_R - 0.2, -2.7, 0.5]) cube([1.5, 5.4, 1.9]);
   difference() {
     cylinder(r = BASE_R, h = BASE_T);
-    // shell screws pass through, countersunk from below
-    for (s = [-1, 1]) {
-      translate([0, s * boss_r, -0.1]) cylinder(d = 2.4, h = BASE_T + 1);
-      translate([0, s * boss_r, -0.01]) cylinder(d1 = 4.6, d2 = 2.4, h = 1.2);
-    }
     // keyhole: hang the puck on one screw
     translate([-9, 0, -0.1]) cylinder(d = 7, h = BASE_T + 1);
     hull() {

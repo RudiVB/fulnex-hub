@@ -62,8 +62,8 @@ module bracket() {
     // identity
     translate([-FT + 0.5, deck_w/2, FH - 26])
       rotate([90, -90, 90]) linear_extrude(0.6)
-        text("FULNEX · LEVEL", size = 2.4, font = "Arial:style=Bold",
-             halign = "center", valign = "center", spacing = 1.3);
+        text("FULNEX · LEVEL", size = 2.4, font = "Michroma",
+             halign = "center", valign = "center", spacing = 1.6);
   }
   // gusset ribs
   for (y = [2, deck_w - 4])

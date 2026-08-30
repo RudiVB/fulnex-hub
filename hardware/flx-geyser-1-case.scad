@@ -109,6 +109,14 @@ module base() {
       }
     }
 
+    // the slit: the family's parting line around the body
+    translate([0, 0, 5])
+      linear_extrude(1.2)
+        difference() {
+          offset(1) squircle(W, D, R);
+          offset(-0.8) squircle(W, D, R);
+        }
+
     // vents on the LV side wall only (mains chamber stays closed)
     for (i = [0 : 3])
       translate([W - T - 1, 22 + i * 10, H - 8])
@@ -131,11 +139,11 @@ module lid() {
     // identity
     translate([W/2, D/2 + 8, Tlid - 0.6])
       linear_extrude(0.7)
-        text("FULNEX", size = 4.2, font = "Arial:style=Bold",
-             halign = "center", valign = "center", spacing = 1.35);
+        text("FULNEX", size = 4.2, font = "Michroma",
+             halign = "center", valign = "center", spacing = 1.6);
     translate([W/2, D/2 - 9, Tlid - 0.6])
       linear_extrude(0.7)
-        text("GEYSER", size = 3.2, font = "Arial:style=Bold",
+        text("GEYSER", size = 3.2, font = "Michroma",
              halign = "center", valign = "center", spacing = 1.5);
     // LED dot between the words
     translate([W/2, D/2, -1]) cylinder(d = pipe_d, h = Tlid + 2);

@@ -50,31 +50,36 @@ module shell() {
     // identity
     translate([0, 6.5, LH - 0.6])
       linear_extrude(0.7)
-        text("FULNEX", size = 3.2, font = "Arial:style=Bold",
-             halign = "center", valign = "center", spacing = 1.3);
+        text("FULNEX", size = 3.2, font = "Michroma",
+             halign = "center", valign = "center", spacing = 1.6);
     translate([0, -7, LH - 0.6])
       linear_extrude(0.7)
-        text("LEAK", size = 2.8, font = "Arial:style=Bold",
+        text("LEAK", size = 2.8, font = "Michroma",
              halign = "center", valign = "center", spacing = 1.5);
-  }
-  // screw bosses for the base
-  for (s = [-1, 1])
-    translate([0, s * boss_r, 0])
+    // the slit: the family's parting line around the wall
+    translate([0, 0, 4.2])
       difference() {
-        cylinder(d = 6, h = LH - TOP - 0.4);
-        translate([0, 0, 2]) cylinder(d = 1.7, h = LH);
+        cylinder(r = LR + 1, h = 1.1);
+        translate([0, 0, -0.5]) cylinder(r = LR - 0.8, h = 2.1);
       }
+    // twist-lock notches + grooves (no-tool battery swap)
+    for (a = [15, 135, 255]) {
+      rotate([0, 0, a])
+        translate([LR - WALL - 1.7, -3.4, -0.1]) cube([2.0, 6.8, 3.0]);
+      rotate([0, 0, a + 16])
+        translate([LR - WALL - 1.7, -3.4, 0.7]) cube([2.0, 9, 2.3]);
+    }
+  }
 }
 
 /* ============ BASE ============ */
 module base() {
+  // twist-lock lugs
+  for (a = [15, 135, 255])
+    rotate([0, 0, a])
+      translate([BASE_R - 0.2, -2.5, 0.5]) cube([1.5, 5, 1.9]);
   difference() {
     cylinder(r = BASE_R, h = BASE_T);
-    // shell screws, countersunk from below
-    for (s = [-1, 1]) {
-      translate([0, s * boss_r, -0.1]) cylinder(d = 2.4, h = BASE_T + 1);
-      translate([0, s * boss_r, -0.01]) cylinder(d1 = 4.6, d2 = 2.4, h = 1.2);
-    }
     // the two probe screws: M3 through-holes; the heads stand
     // 1.5 mm proud underneath as the water electrodes
     for (s = [-1, 1])

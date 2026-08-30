@@ -254,6 +254,14 @@ Deno.serve(async (req) => {
   clim("cl_t_hi", 5, 60);
   clim("cl_air_on", 0, 60);
   clim("cl_air_rest", 0, 240);
+  // geyser schedule (fw 2.1+): windows in minutes-of-day + target
+  reply.g_en = d.g_en === true;
+  clim("g_t", 30, 75);
+  clim("tz", -720, 840);
+  for (const k of ["g_s1a", "g_s1b", "g_s2a", "g_s2b"]) {
+    const v = num(d[k]);
+    if (v !== undefined) reply[k] = Math.min(1439, Math.max(-1, Math.round(v)));
+  }
   // cloud OTA: admin sets desired.fw_ver + fw_url; device self-updates
   if (typeof d.fw_ver === "string" && typeof d.fw_url === "string" && d.fw_ver !== body.fw) {
     reply.fw_ver = d.fw_ver;
