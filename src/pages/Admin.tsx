@@ -1386,13 +1386,19 @@ const PLAN_YEARS = [
   },
 ] as const;
 
+// No capital — salary only. Rule: salary funds small fixed steps
+// (caps at ~R1.5k–3k in a month); anything bigger must be paid for
+// by customers first. The order below is the order money allows.
 const PLAN_FUNDING = [
-  { item: "Pilot parts (spent this month)", cost: "~R3,300", src: "own pocket" },
-  { item: "Company + ICASA (two families)", cost: "~R8k–12k", src: "own pocket + first deposits" },
-  { item: "Printer + AliExpress restock", cost: "~R6k", src: "founder pre-orders" },
-  { item: "PCB Rev A run (100 boards)", cost: "~R12k", src: "launch revenue" },
-  { item: "Insurance + trademark + buffer", cost: "~R10k", src: "launch revenue" },
-  { item: "TOTAL to full launch", cost: "≈ R40k", src: "self-funded — no loans, no equity given away" },
+  { item: "Pilot parts — DONE this month", cost: "~R3,300", src: "salary (the big month)" },
+  { item: "Next: CIPC company + ICASA pre-application email", cost: "R175 + R0", src: "salary — one coffee's worth" },
+  { item: "Print service, first case sets", cost: "~R700", src: "salary, next month" },
+  { item: "Open founder pre-orders (refundable deposits)", cost: "R0", src: "beta demo is the marketing" },
+  { item: "ICASA family fees", cost: "~R7k", src: "deposits + first CMMS invoice — never salary" },
+  { item: "Printer + AliExpress restock", cost: "~R6k", src: "founder deposits only" },
+  { item: "PCB Rev A run (100 boards)", cost: "~R12k", src: "launch revenue only" },
+  { item: "Trademark, insurance, buffer", cost: "~R10k", src: "launch revenue only" },
+  { item: "Salary's total exposure, ever", cost: "≈ R5k", src: "everything past this line is customer-funded" },
 ] as const;
 
 function BusinessPlanCard() {
@@ -1436,7 +1442,7 @@ function BusinessPlanCard() {
         ))}
       </div>
 
-      <div className="text-[11px] font-mono uppercase tracking-widest text-mute mb-2">Money needed — the whole ask</div>
+      <div className="text-[11px] font-mono uppercase tracking-widest text-mute mb-2">Money — no capital, salary only, so this is the order things happen</div>
       <div className="rounded-xl border border-line bg-ground/60 overflow-hidden mb-4">
         <table className="w-full text-xs">
           <tbody>
