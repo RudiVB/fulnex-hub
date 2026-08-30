@@ -209,7 +209,12 @@ export default function Admin() {
         </div>
       )}
       {tab === "devlog" && <DevlogCard log={log} me={me} onChange={load} />}
-      {tab === "company" && <ComplianceCard />}
+      {tab === "company" && (
+        <div className="space-y-6">
+          <BusinessPlanCard />
+          <ComplianceCard />
+        </div>
+      )}
       {tab === "settings" && (
         <div className="space-y-6">
           <ProductsCard products={products} onChange={load} />
@@ -1310,6 +1315,138 @@ function ProductsCard({ products, onChange }: { products: Product[]; onChange: (
           </tbody>
         </table>
       </div>
+    </FadeUp>
+  );
+}
+
+/* ===================== the business plan ===================== */
+const PLAN_LINES = [
+  {
+    name: "FULNEX Home", state: "pre-order phase",
+    what: "The hub + senses + biltong kas + geyser. Hardware once, senses forever — every hub sold seeds years of R349 add-on sales.",
+    money: "Hub R899 · senses R349 · Full Home R3,999 · kas as premium furniture",
+  },
+  {
+    name: "FULNEX Pro (subscription)", state: "tiers live",
+    what: "History, reports, family sharing, priority alerts on top of the free tier. Pure margin — the hardware is the customer-acquisition cost.",
+    money: "Monthly per home, no parts cost, compounds with every hub in the field",
+  },
+  {
+    name: "Fulnex CMMS", state: "LIVE IN BETA at cmms.fulnex.cloud",
+    what: "Maintenance management for companies — already running with real users. B2B SaaS: fewer customers, bigger invoices, monthly forever.",
+    money: "Per-company monthly licences; one signed factory out-earns fifty pucks",
+  },
+  {
+    name: "WMS + custom work", state: "in development",
+    what: "The warehouse backbone, NetPulse, plugins, and paid custom IoT installs (farms, lodges, factories wanting FULNEX senses + dashboards).",
+    money: "Project fees now, product revenue later — custom installs also field-test hardware",
+  },
+] as const;
+
+const PLAN_YEARS = [
+  {
+    year: "Year 1 — Sep 2026 to Aug 2027", title: "Prove and launch",
+    rows: [
+      "Q1: pilot fleet built at Olof's (hub, door, leak day one; temp + motion when sensors land). CIPC registered, ICASA family applications in.",
+      "Q2: 10 beta homes wearing FULNEX free — their data and stories are the marketing. Printer bought from first founder deposits. Rev D cases from real measurements.",
+      "Q3: ICASA granted → founder pre-orders ship. AliExpress restock. First 5 CMMS companies paying.",
+      "Q4: public launch at R899/R349. Carrier PCB Rev A ordered from the PROVEN circuit. Target: 60 homes + 5 CMMS firms.",
+    ],
+    income: "R250k–R400k revenue · ~R150k gross — the year pays for its own tooling",
+  },
+  {
+    year: "Year 2 — to Aug 2028", title: "Scale the winners",
+    rows: [
+      "PCB-assembled senses (R80–120 landed) — Olof assembles hundreds, not tens. Second printer or small print farm.",
+      "Geyser launches through electrician partners (they install, we supply — their CoC, our hardware).",
+      "Kas batches as premium product — the story product that markets everything else.",
+      "CMMS grows on referrals: 20 companies. Pro subscription attach rate target 30% of homes.",
+    ],
+    income: "R1.5m–R2.5m revenue · ~60% blended margin — first salaries drawn",
+  },
+  {
+    year: "Year 3 — to Aug 2029", title: "Become the SA name",
+    rows: [
+      "2,000+ homes cumulative. Installer/retail channel (security installers already visit every home with a drill).",
+      "WMS signs first warehouse clients — the B2B suite (CMMS + WMS + senses) sells as one FULNEX for Business story.",
+      "Injection-mould quote for the puck once volume justifies tooling (~R80k, drops case cost to cents).",
+      "Decide from strength: stay bootstrapped and profitable, or raise to accelerate — never to survive.",
+    ],
+    income: "R5m+ revenue · subscriptions + B2B are half of gross by year end",
+  },
+] as const;
+
+const PLAN_FUNDING = [
+  { item: "Pilot parts (spent this month)", cost: "~R3,300", src: "own pocket" },
+  { item: "Company + ICASA (two families)", cost: "~R8k–12k", src: "own pocket + first deposits" },
+  { item: "Printer + AliExpress restock", cost: "~R6k", src: "founder pre-orders" },
+  { item: "PCB Rev A run (100 boards)", cost: "~R12k", src: "launch revenue" },
+  { item: "Insurance + trademark + buffer", cost: "~R10k", src: "launch revenue" },
+  { item: "TOTAL to full launch", cost: "≈ R40k", src: "self-funded — no loans, no equity given away" },
+] as const;
+
+function BusinessPlanCard() {
+  return (
+    <FadeUp className="card p-5 sm:p-6">
+      <h2 className="font-semibold mb-1">The FULNEX plan — three years</h2>
+      <p className="text-mute text-sm mb-5">
+        Fulnex (Pty) Ltd is the umbrella: one company, four ways it earns. Hardware is the
+        face; subscriptions and B2B software are the engine. Everything below is self-funded
+        by the ladder: pilot → beta → founder pre-orders → launch.
+      </p>
+
+      <div className="text-[11px] font-mono uppercase tracking-widest text-mute mb-2">What earns the money</div>
+      <div className="grid sm:grid-cols-2 gap-3 mb-6">
+        {PLAN_LINES.map((l) => (
+          <div key={l.name} className="rounded-xl border border-line bg-ground/60 p-4">
+            <div className="flex items-baseline justify-between gap-2">
+              <div className="font-medium text-sm">{l.name}</div>
+              <div className="text-[10px] font-mono uppercase tracking-widest text-brass shrink-0">{l.state}</div>
+            </div>
+            <p className="text-mute text-xs mt-1.5">{l.what}</p>
+            <p className="text-faint text-xs mt-1.5 font-mono">{l.money}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="text-[11px] font-mono uppercase tracking-widest text-mute mb-2">The three years</div>
+      <div className="space-y-3 mb-6">
+        {PLAN_YEARS.map((y) => (
+          <div key={y.year} className="rounded-xl border border-line bg-ground/60 p-4">
+            <div className="flex items-baseline justify-between gap-2 mb-2">
+              <div className="font-medium text-sm">{y.year} · <span className="text-mute">{y.title}</span></div>
+            </div>
+            <ul className="space-y-1.5">
+              {y.rows.map((r) => (
+                <li key={r} className="flex gap-2 text-xs text-mute"><span className="text-brass shrink-0">·</span>{r}</li>
+              ))}
+            </ul>
+            <div className="text-xs font-mono text-brass mt-2.5">{y.income}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="text-[11px] font-mono uppercase tracking-widest text-mute mb-2">Money needed — the whole ask</div>
+      <div className="rounded-xl border border-line bg-ground/60 overflow-hidden mb-4">
+        <table className="w-full text-xs">
+          <tbody>
+            {PLAN_FUNDING.map((f, i) => (
+              <tr key={f.item} className={i === PLAN_FUNDING.length - 1 ? "border-t border-line font-medium" : ""}>
+                <td className="px-4 py-2 text-mute">{f.item}</td>
+                <td className="px-2 py-2 text-right font-mono text-brass whitespace-nowrap">{f.cost}</td>
+                <td className="px-4 py-2 text-right text-faint font-mono whitespace-nowrap">{f.src}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <p className="text-faint text-xs">
+        Unit economics at steady state: sense costs ~R110 sells R349 · hub ~R157 sells R899 ·
+        Full Home ~R1,130 sells R3,999. Revenue figures are targets, not promises — the gates
+        are real: no PCB before the hand-built circuit proves itself, no scale before ICASA,
+        no raise unless it buys speed we already earned.
+      </p>
     </FadeUp>
   );
 }
