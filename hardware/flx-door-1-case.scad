@@ -30,7 +30,9 @@ BACK_T = 1.6;
 
 /* ---------- the magnet block ---------- */
 ML = 26; MW = 12; MH = 13;   // matches the bar's profile height
-mag_d = 8.2; mag_h = 3.2;    // pocket for an 8x3 disc magnet
+// pocket for the Communica MGT RECTANG 15x9x3 N35 (5/pk) — a bigger
+// magnet than the original 8x3 disc, so the door gap is forgiving
+mag_l = 15.4; mag_w = 9.4; mag_h = 3.4;
 
 $fn = 64;
 
@@ -133,9 +135,10 @@ module magnet() {
       translate([0, 0, 2]) linear_extrude(MH - 2) pill(ML, MW, 5);
     }
     // magnet pocket, opens at the back
-    translate([ML/2, MW/2, -0.1]) cylinder(d = mag_d, h = mag_h + 0.1);
+    translate([ML/2 - mag_l/2, MW/2 - mag_w/2, -0.1])
+      cube([mag_l, mag_w, mag_h + 0.1]);
     // tape recess around it
-    translate([ML/2 - 9, MW/2 - 4, -0.01]) cube([18, 8, 0.4]);
+    translate([ML/2 - 10, MW/2 - 4.9, -0.01]) cube([20, 9.8, 0.4]);
     // the matching alignment line on the bar-facing edge
     translate([ML/2 - 6, 0.6, MH - 4])
       rotate([90, 0, 0]) linear_extrude(0.7) square([12, 1.2]);
