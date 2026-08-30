@@ -1,4 +1,5 @@
 import { ReactNode, useEffect } from "react";
+import { Logotype } from "./Logotype";
 import {
   motion, useMotionValue, useSpring, useTransform,
 } from "framer-motion";
@@ -155,19 +156,17 @@ export function SwitchMark({ size = 120 }: { size?: number }) {
         boxShadow: "0 18px 40px -22px rgba(0,0,0,.95), inset 0 1px 0 rgba(255,255,255,.06)",
       }}
     >
-      <span
-        className="font-display text-[#0e1013] select-none"
-        style={{ fontSize: size * 0.085, letterSpacing: "0.12em" }}
-      >
-        FULNEX
+      <span className="relative select-none" style={{ width: size * 0.42 }}>
+        <Logotype eye={false} className="w-full h-auto text-[#0e1013]" />
+        <span
+          className="absolute bg-white rounded-full"
+          style={{
+            width: size * 0.016, height: size * 0.016,
+            left: "92%", top: "50%", transform: "translate(-50%,-50%)",
+            boxShadow: "0 0 4px 1px rgba(255,255,255,.35)",
+          }}
+        />
       </span>
-      <span
-        className="absolute bg-white rounded-full"
-        style={{
-          width: size * 0.035, height: size * 0.035, right: "14%", top: "18%",
-          boxShadow: "0 0 8px 2px rgba(255,255,255,.5)",
-        }}
-      />
       <span
         className="absolute bg-[#26292e] rounded-b"
         style={{ width: size * 0.10, height: size * 0.10, bottom: -size * 0.09, left: "18%" }}
@@ -192,28 +191,22 @@ export function DeviceMark({ size = 150 }: { size?: number }) {
         boxShadow: "0 30px 60px -30px rgba(0,0,0,.9)",
       }}
     >
-      <span
-        className="font-display text-[#0e1013] select-none"
-        style={{
-          fontSize: size * 0.115,
-          letterSpacing: "0.14em",
-          textShadow: "0 1px 0 rgba(255,255,255,.07)",
-        }}
-      >
-        FULNEX
+      <span className="relative select-none" style={{ width: size * 0.58 }}>
+        <Logotype eye={false} className="w-full h-auto text-[#0e1013]" />
+        <motion.span
+          className="absolute rounded-full bg-white"
+          style={{
+            width: size * 0.02,
+            height: size * 0.02,
+            left: "92%",
+            top: "50%",
+            transform: "translate(-50%,-50%)",
+            boxShadow: "0 0 6px 1.5px rgba(255,255,255,.4)",
+          }}
+          animate={{ opacity: [1, 0.35, 1] }}
+          transition={{ duration: 3.6, repeat: Infinity, ease: "easeInOut" }}
+        />
       </span>
-      <motion.span
-        className="absolute rounded-full bg-white"
-        style={{
-          width: size * 0.045,
-          height: size * 0.045,
-          right: "16%",
-          bottom: "16%",
-          boxShadow: "0 0 14px 4px rgba(255,255,255,.6)",
-        }}
-        animate={{ opacity: [1, 0.35, 1] }}
-        transition={{ duration: 3.6, repeat: Infinity, ease: "easeInOut" }}
-      />
       <motion.span
         className="absolute inset-0 pointer-events-none"
         style={{

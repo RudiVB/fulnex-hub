@@ -8,6 +8,7 @@ import {
 import {
   DeviceMark, DoorMark, PuckMark, Reveal, SwitchMark, easeOut,
 } from "../components/motion";
+import { Logotype } from "../components/Logotype";
 
 function RenderImg({ name, alt, className, fallback }: {
   name: string;
@@ -96,12 +97,12 @@ export default function Landing() {
             <DeviceMark size={230} />
           </motion.div>
           <motion.h1
-            className="font-display text-ink tracking-[0.16em] text-5xl sm:text-7xl mt-12"
-            initial={{ opacity: 0, letterSpacing: "0.45em" }}
-            animate={{ opacity: 1, letterSpacing: "0.16em" }}
+            className="mt-12 text-ink"
+            initial={{ opacity: 0, scale: 1.12 }}
+            animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 1.4, ease: easeOut, delay: 0.2 }}
           >
-            FULNEX
+            <Logotype className="h-12 sm:h-16 w-auto" />
           </motion.h1>
           <motion.p
             className="text-mute text-xl sm:text-2xl mt-6 max-w-md"

@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { configured, supabase } from "./lib/supabase";
 import { easeOut } from "./components/motion";
+import { Logotype } from "./components/Logotype";
 import Login from "./pages/Login";
 import Landing from "./pages/Landing";
 import Devices from "./pages/Devices";
@@ -25,17 +26,20 @@ import CasePage from "./pages/Case";
 
 function Brand({ compact = false }: { compact?: boolean }) {
   return (
-    <Link to="/" className="font-display tracking-widest text-sm inline-flex items-center gap-2.5">
-      <motion.span
-        className="w-2 h-2 rounded-full bg-white"
-        animate={{ boxShadow: [
-          "0 0 6px rgba(255,255,255,.5)",
-          "0 0 14px rgba(255,255,255,.95)",
-          "0 0 6px rgba(255,255,255,.5)",
-        ] }}
-        transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
-      />
-      {!compact && "FULNEX"}
+    <Link to="/" className="inline-flex items-center text-ink">
+      {compact ? (
+        <motion.span
+          className="w-2 h-2 rounded-full bg-white"
+          animate={{ boxShadow: [
+            "0 0 6px rgba(255,255,255,.5)",
+            "0 0 14px rgba(255,255,255,.95)",
+            "0 0 6px rgba(255,255,255,.5)",
+          ] }}
+          transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
+        />
+      ) : (
+        <Logotype className="h-[15px] w-auto" />
+      )}
     </Link>
   );
 }
@@ -229,7 +233,7 @@ export default function App() {
   if (!configured) {
     return (
       <div className="mx-auto max-w-lg px-6 py-24 text-center">
-        <div className="font-display tracking-widest text-2xl mb-4">FULNEX</div>
+        <Logotype className="h-6 w-auto mx-auto mb-4 text-ink" />
         <p className="text-mute">
           No Supabase project configured yet. Copy <code className="font-mono text-brass">.env.example</code> to{" "}
           <code className="font-mono text-brass">.env</code>, fill in your project URL and anon key, and restart the dev server.

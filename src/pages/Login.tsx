@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Activity, BellRing, ShieldCheck } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { DeviceMark, easeOut } from "../components/motion";
+import { Logotype } from "../components/Logotype";
 
 const POINTS = [
   { icon: Activity, text: "Live climate, doors, power — every 60 seconds" },
@@ -44,12 +45,12 @@ export default function Login() {
         <div className="hidden lg:flex flex-col items-start">
           <DeviceMark size={170} />
           <motion.h1
-            className="font-display tracking-[0.18em] text-4xl mt-8 mb-3 text-ink"
-            initial={{ opacity: 0, letterSpacing: "0.4em" }}
-            animate={{ opacity: 1, letterSpacing: "0.18em" }}
+            className="mt-8 mb-3 text-ink"
+            initial={{ opacity: 0, scale: 1.1 }}
+            animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 1.1, ease: easeOut, delay: 0.1 }}
           >
-            FULNEX
+            <Logotype className="h-9 w-auto" />
           </motion.h1>
           <motion.p
             className="text-mute text-lg mb-8"
@@ -85,7 +86,7 @@ export default function Login() {
           {/* mobile brand */}
           <div className="lg:hidden flex flex-col items-center mb-8">
             <DeviceMark size={110} />
-            <h1 className="font-display tracking-[0.2em] text-2xl mt-5 text-ink">FULNEX</h1>
+            <h1 className="mt-5 text-ink"><Logotype className="h-6 w-auto" /></h1>
             <p className="text-mute text-sm mt-1.5">Your things, watched.</p>
           </div>
 

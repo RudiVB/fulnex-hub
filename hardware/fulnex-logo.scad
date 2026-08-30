@@ -1,79 +1,108 @@
 // ============================================================
-//  The FULNEX logotype — drawn, not typed.
-//  Blocky geometric letterforms built from rectangles and
-//  diagonals, in the spirit of the approved renders. At large
-//  sizes the family's parting SLIT cuts straight through the
-//  letters — the logo carries the same line as the products.
+//  FULNEX logotype — v3, traced from the approved mark
+//  Rounded techno sans: F with a curved elbow, U with a full
+//  semicircular bowl, L, N drawn as an arch (the U flipped),
+//  E with its spine on the right (the mirrored Ǝ of the mark),
+//  X as two diagonals meeting in a small hub that carries the
+//  LED light pipe — the X holds the light.
 //
-//  use <fulnex-logo.scad>;
-//  linear_extrude(0.7) fulnex_logo(h = 11);   // centred, 2D
-//
-//  Width = 5.7 × h. The slit appears automatically at h >= 10
-//  (below that the stencil gap would be too fine to print).
+//  fulnex_logo(h)   — 2D, centered on origin, h = cap height
+//  fulnex_eye_x(h)  — x offset from logo center to the X hub
 // ============================================================
 
-module _fl_F() {
-  square([2.2, 10]);
-  translate([0, 7.8]) square([7, 2.2]);
-  translate([0, 4.1]) square([5.6, 2.2]);
-}
-module _fl_U() {
-  square([2.2, 10]);
-  translate([4.8, 0]) square([2.2, 10]);
-  square([7, 2.2]);
-}
-module _fl_L() {
-  square([2.2, 10]);
-  square([7, 2.2]);
-}
-module _fl_N() {
-  square([2.2, 10]);
-  translate([4.8, 0]) square([2.2, 10]);
-  polygon([[0, 10], [2.2, 10], [7, 0], [4.8, 0]]);
-}
-module _fl_E() {
-  square([2.2, 10]);
-  translate([0, 7.8]) square([7, 2.2]);
-  translate([0, 3.9]) square([5.6, 2.2]);
-  square([7, 2.2]);
-}
-// the signature: the X's strokes part around a round void at the
-// crossing — on every device, the LED light pipe shines through
-// it. The logo holds the light.
-module _fl_X() {
-  difference() {
-    union() {
-      polygon([[0, 0], [2.2, 0], [7, 10], [4.8, 10]]);
-      polygon([[4.8, 0], [7, 0], [2.2, 10], [0, 10]]);
-    }
-    translate([3.5, 5]) circle(r = 2.4);
+$fn = 64;
+t = 2.2;            // stroke weight on the 10-unit grid
+Rz = 2.8;           // elbow radius (F, L corners)
+Re = 1.2;           // near-square elbows on the E so it never reads as a 3
+
+function fulnex_eye_x(h) = 2.39 * h;
+
+// quarter of an annular ring, first quadrant (0..90 deg)
+module _fl_arc(R) {
+  intersection() {
+    difference() { circle(R); circle(R - t); }
+    square(R + 0.1);
   }
 }
 
-// where the X-void sits, relative to the logo centre (for the
-// light pipe): x = +2.5 * h, y = 0
-function fulnex_eye_x(h) = 2.5 * h;
-
-// centred at the origin; h in mm. The mark: rounded modular
-// letterforms — soft, chunky, unmistakable — with the family's
-// slit cut through at large sizes.
-// ONE mark, every size: the slit is always part of the logo —
-// proportional, so the identity never changes between devices.
-// (Below ~5 mm the slit prints as a hairline; that's fine.)
-module fulnex_logo(h = 10, slit = true) {
-  s = h / 10;
-  scale([s, s])
-    translate([-28.5, -5])
-      difference() {
-        offset(r = 0.9) offset(r = -0.9) offset(r = 0.55)
-          union() {
-            _fl_F();
-            translate([10, 0]) _fl_U();
-            translate([20, 0]) _fl_L();
-            translate([30, 0]) _fl_N();
-            translate([40, 0]) _fl_E();
-            translate([50, 0]) _fl_X();
-          }
-        if (slit) translate([-2, 3.05]) square([61, 0.9]);
-      }
+module _fl_F() {              // width 7.0
+  square([t, 10 - Rz]);
+  translate([Rz, 10 - Rz]) rotate(90) _fl_arc(Rz);
+  translate([Rz, 10 - t]) square([7.0 - Rz, t]);
+  translate([0, 4.5]) square([5.2, t]);
 }
+
+module _fl_U(w = 7.4) {       // full semicircular bowl
+  r = w / 2;
+  difference() {
+    union() {
+      translate([0, r]) square([w, 10 - r]);
+      translate([r, r]) circle(r);
+    }
+    translate([t, r]) square([w - 2 * t, 10 - r + 1]);
+    translate([r, r]) circle(r - t);
+  }
+}
+
+module _fl_L() {              // width 6.2
+  translate([0, Rz]) square([t, 10 - Rz]);
+  translate([Rz, Rz]) rotate(180) _fl_arc(Rz);
+  translate([Rz, 0]) square([6.2 - Rz, t]);
+}
+
+module _fl_N() {              // the arch: the U flipped on its head
+  translate([0, 10]) mirror([0, 1]) _fl_U(7.4);
+}
+
+module _fl_E_arc(R) {         // quarter ring with the tighter radius
+  intersection() {
+    difference() { circle(R); circle(R - t); }
+    square(R + 0.1);
+  }
+}
+
+module _fl_E() {              // width 6.8, spine on the RIGHT (as approved)
+  translate([6.8 - t, Re]) square([t, 10 - 2 * Re]);
+  translate([6.8 - Re, 10 - Re]) _fl_E_arc(Re);
+  translate([0, 10 - t]) square([6.8 - Re, t]);
+  translate([6.8 - Re, Re]) rotate(270) _fl_E_arc(Re);
+  square([6.8 - Re, t]);
+  translate([1.4, 4.5]) square([5.4, t]);
+}
+
+module _fl_stroke(a, b) {     // rounded-end bar from a to b
+  hull() {
+    translate(a) circle(t / 2);
+    translate(b) circle(t / 2);
+  }
+}
+
+module _fl_X() {              // width 7.6, hub at (3.8, 5)
+  difference() {
+    union() {
+      _fl_stroke([1.15, 1.1], [6.45, 8.9]);
+      _fl_stroke([6.45, 1.1], [1.15, 8.9]);
+      translate([3.8, 5]) circle(2.2);
+    }
+    translate([3.8, 5]) circle(1.1);   // the eye — LED pipe lands here
+  }
+}
+
+module fulnex_logo(h = 10, slit = false) {
+  scale(h / 10) translate([-27.7, -5]) {
+    // close: round the inner elbows / open: soften the terminals
+    offset(-0.35) offset(0.35)
+    offset(0.55) offset(-0.55)
+    union() {
+      _fl_F();
+      translate([9.6, 0]) _fl_U();
+      translate([19.6, 0]) _fl_L();
+      translate([28.4, 0]) _fl_N();
+      translate([38.4, 0]) _fl_E();
+      translate([47.8, 0]) _fl_X();
+    }
+  }
+}
+
+// preview
+fulnex_logo(10);
