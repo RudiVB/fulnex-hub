@@ -26,8 +26,12 @@ WALL = 2.4;
 
 /* ---------- roof ---------- */
 RW = 118; RD = 88;             // overhang 4mm all round
-RF = 18;  RB = 46;             // front/back skirt heights - the slope
-SOLAR_L = 100; SOLAR_W = 70; SOLAR_T = 3.4;
+RF = 18;  RB = 64;             // steeper slope (~28 deg) - sheds better
+SOLAR_L = 100; SOLAR_W = 70;   // panel GLUES onto a raised plinth
+PLINTH_H = 4;                  // panel overhangs it 4mm all round -
+                               // nothing upstanding, nothing to dam
+                               // (Olof: grooves collect water + bird
+                               // droppings; proud mounting self-cleans)
 
 /* ---------- interior ---------- */
 post_xy = [[10, 10], [W - 10, 10], [10, D - 10], [W - 10, D - 10]];
@@ -119,14 +123,29 @@ module roof() {
       translate([x, -1, 8]) rotate([-90, 0, 0]) cylinder(d = 3.4, h = 14);
       translate([x, RD - 13, 8]) rotate([-90, 0, 0]) cylinder(d = 3.4, h = 14);
     }
-    // solar recess sunk into the sloped face, parallel to it
-    translate([RW/2 - SOLAR_L/2, RD/2, RF + (RB - RF)/2])
-      rotate([ang, 0, 0])
-        translate([0, -SOLAR_W/2, -SOLAR_T])
-          cube([SOLAR_L, SOLAR_W, SOLAR_T + 20]);
     // panel wire hole down through the deck
-    translate([RW/2, RD/2, -1]) cylinder(d = 5, h = 60);
+    translate([RW/2, RD/2, -1]) cylinder(d = 5, h = 70);
   }
+  // raised plinth ON the slope - the panel silicones onto this and
+  // overhangs it on every side, so water and droppings run OFF the
+  // panel edges, never against a lip
+  zc = RF + (RB - RF)/2;
+  difference() {
+    translate([RW/2 - (SOLAR_L - 8)/2, RD/2, zc - 1])
+      rotate([ang, 0, 0])
+        translate([0, -(SOLAR_W - 8)/2, 0])
+          cube([SOLAR_L - 8, SOLAR_W - 8, PLINTH_H + 1]);
+    translate([RW/2, RD/2, -1]) cylinder(d = 5, h = 70);
+  }
+  // the kak-keil: a chevron ridge UPHILL (back) of the plinth -
+  // apex points up the slope, arms open downhill, so runoff and
+  // whatever the birds contribute splits AROUND the panel
+  zk = RF + (RD/2 + 36) * (RB - RF) / RD;
+  for (s = [-1, 1])
+    translate([RW/2, RD/2 + 36, zk - 1.5])
+      rotate([ang, 0, 0])
+        rotate([0, 0, s < 0 ? 220 : -40])
+          translate([0, -1.5, 0]) cube([34, 3, 5]);
 }
 
 /* ============ layout ============ */
