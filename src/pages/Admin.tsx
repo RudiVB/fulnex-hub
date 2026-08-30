@@ -48,7 +48,7 @@ type Provisioned = {
 
 const ORDER_STATUSES = ["quote", "paid", "built", "shipped", "delivered", "cancelled"] as const;
 const REVENUE_STATUSES = new Set(["paid", "built", "shipped", "delivered"]);
-const CATEGORIES = ["electronics", "furniture", "printing", "senses", "packaging", "tools"] as const;
+const CATEGORIES = ["electronics", "furniture", "printing", "senses", "packaging", "tools", "next order"] as const;
 
 function rands(cents: number): string {
   return "R" + (cents / 100).toLocaleString("en-ZA", { maximumFractionDigits: 0 });
