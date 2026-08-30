@@ -76,6 +76,7 @@ function PublicShell({ children }: { children: React.ReactNode }) {
           <span className="flex items-center gap-4">
             <Link to="/manual" className="hover:text-mute">manuals</Link>
             <Link to="/plans" className="hover:text-mute">plans</Link>
+            <a href="https://fulnex.cloud" className="hover:text-mute">fulnex.cloud</a>
             <span>pre-order phase</span>
           </span>
         </div>
