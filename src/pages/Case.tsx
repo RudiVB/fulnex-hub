@@ -108,6 +108,26 @@ export default function CasePage() {
           FLX-HUB-1 · 120 × 120 × 40 mm · matte black PETG · designed in South Africa
         </p>
       </FadeUp>
+
+      {/* ---- the puck ---- */}
+      <FadeUp className="mt-14" delay={0.12}>
+        <div className="text-[10px] font-mono uppercase tracking-[0.25em] text-brass mb-1">FLX-PUCK-1 · REV A</div>
+        <h2 className="text-xl font-semibold tracking-tight mb-1">The sense puck</h2>
+        <p className="text-mute text-sm mb-4">
+          Ø46 mm, stick anywhere. Inside: an ESP32-C3 broadcasting over Bluetooth as a
+          deep-sleep beacon — wake, read, shout once, sleep — about a year on a CR2450
+          coin cell. The face carries FULNEX, the light dot, and what it is: the{" "}
+          <span className="font-mono text-ink">variant</span> word (TEMP, DOOR, MOTION,
+          LEAK) is one parameter in the print file, so every puck type comes off the
+          printer already labelled. Same shell for every variant — only the little board
+          on the base changes. View both parts in the viewer above (Puck shell / Puck base).
+        </p>
+        <ul className="text-mute text-sm space-y-1.5">
+          <li className="flex gap-2"><span className="text-brass">·</span> Base screws up into the shell (2× M2) — cell pocket, board pillars, vent slots, and a keyhole so it hangs on one screw or sticks with a tape pad.</li>
+          <li className="flex gap-2"><span className="text-brass">·</span> Shell prints face-down: flawless dome, crisp deboss, no supports.</li>
+          <li className="flex gap-2"><span className="text-brass">·</span> The hub already listens for it — puck broadcasts use the beacon format the firmware ingests today.</li>
+        </ul>
+      </FadeUp>
     </div>
   );
 }
