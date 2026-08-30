@@ -119,11 +119,14 @@ export default function CasePage() {
           deep-sleep beacon — wake, read, shout once, sleep — about a year on a CR2450
           coin cell. The face carries FULNEX, the light dot, and what it is: the{" "}
           face says what it does — <span className="font-mono text-ink">TEMP · HUMIDITY</span> —
-          debossed straight into the plastic. Each sense that needs a different body gets
-          one: the <span className="text-ink">door pair</span> (a slim bar on the frame + a
-          battery-free magnet block on the door, alignment lines meeting across the gap)
-          is designed and in the viewer above; motion (PIR lens window) and leak (floor
-          probes) get their own shapes next.
+          debossed straight into the plastic. The whole sense family is designed, each in
+          the body its job demands: the <span className="text-ink">door pair</span> (slim
+          bar on the frame + battery-free magnet block, alignment lines meeting across the
+          gap), <span className="text-ink">motion</span> (the same dome with the PIR's
+          fresnel lens breaking through the centre — stick it high, it watches the room),
+          and <span className="text-ink">leak</span> (a low disc that stands on two
+          stainless screw-heads — the screws are the electrodes; water bridges them and
+          it shouts). All in the viewer above.
         </p>
         <ul className="text-mute text-sm space-y-1.5">
           <li className="flex gap-2"><span className="text-brass">·</span> Base screws up into the shell (2× M2) — cell pocket, board pillars, vent slots, and a keyhole so it hangs on one screw or sticks with a tape pad.</li>

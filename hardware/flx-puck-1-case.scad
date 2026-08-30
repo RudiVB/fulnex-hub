@@ -24,6 +24,10 @@ part = "both";        // "shell" | "base" | "both"
 // what this puck does, in small letters under the dot
 variant1 = "TEMP · HUMIDITY";
 variant2 = "";
+// MOTION variant: set lens_d = 13 and variant1 = "MOTION" — the
+// PIR's fresnel dome pokes through the centre, the LED dot moves
+// to the shoulder, and an interior ring grips the AM312 lens.
+lens_d = 0;
 
 /* ---------- master dimensions ---------- */
 PR = 23;              // puck radius (Ø46)
@@ -59,15 +63,21 @@ module shell() {
     puck_solid(PR, PH, PE);
     // cavity — open bottom, TOP mm ceiling, WALL mm walls
     translate([0, 0, -0.1]) puck_solid(PR - WALL, PH - TOP + 0.1, 4);
-    // LED light pipe, dead centre
-    translate([0, 0, -1]) cylinder(d = pipe_d, h = PH + 2);
+    // LED light pipe: dead centre, or on the shoulder when the
+    // PIR lens owns the middle
+    if (lens_d > 0) {
+      translate([0, 0, -1]) cylinder(d = lens_d, h = PH + 2);
+      translate([8.5, 8.5, PH - 3]) cylinder(d = pipe_d, h = 5);
+    } else {
+      translate([0, 0, -1]) cylinder(d = pipe_d, h = PH + 2);
+    }
     // identity, debossed into the face: FULNEX above the dot,
     // what-it-is below (prints crisp — face-down on the plate)
-    translate([0, 7.5, PH - 0.6])
+    translate([0, lens_d > 0 ? 10.5 : 7.5, PH - 0.6])
       linear_extrude(0.7)
-        text("FULNEX", size = 3.8, font = "Arial:style=Bold",
+        text("FULNEX", size = lens_d > 0 ? 3.2 : 3.8, font = "Arial:style=Bold",
              halign = "center", valign = "center", spacing = 1.35);
-    translate([0, variant2 == "" ? -8 : -6.5, PH - 0.6])
+    translate([0, lens_d > 0 ? -10.5 : (variant2 == "" ? -8 : -6.5), PH - 0.6])
       linear_extrude(0.7)
         text(variant1, size = 2.2, font = "Arial:style=Bold",
              halign = "center", valign = "center", spacing = 1.4);
@@ -88,6 +98,13 @@ module shell() {
       difference() {
         cylinder(d = 6.5, h = PH - TOP - 0.4);
         translate([0, 0, 2]) cylinder(d = 1.7, h = PH);   // M2 self-tap
+      }
+  // MOTION: retention ring under the ceiling grips the AM312 lens
+  if (lens_d > 0)
+    translate([0, 0, PH - TOP - 4])
+      difference() {
+        cylinder(d = lens_d + 3.6, h = 4);
+        translate([0, 0, -0.1]) cylinder(d = lens_d - 0.6, h = 4.2);
       }
 }
 

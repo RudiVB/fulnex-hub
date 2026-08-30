@@ -11,6 +11,9 @@ const PARTS = [
   { key: "puckbase", label: "Puck base", file: "/hardware/flx-puck-1-base.stl" },
   { key: "doorbar", label: "Door bar", file: "/hardware/flx-door-1-bar.stl" },
   { key: "doormag", label: "Door magnet", file: "/hardware/flx-door-1-magnet.stl" },
+  { key: "motion", label: "Motion", file: "/hardware/flx-motion-1-shell.stl" },
+  { key: "leak", label: "Leak", file: "/hardware/flx-leak-1-shell.stl" },
+  { key: "leakbase", label: "Leak base", file: "/hardware/flx-leak-1-base.stl" },
 ] as const;
 
 export function CaseViewer() {
