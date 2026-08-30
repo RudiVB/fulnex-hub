@@ -161,6 +161,16 @@ module base() {
         text("WATCHED", size = 3.6, font = "Arial:style=Bold",
              halign = "center", valign = "center", spacing = 1.35);
 
+    // ---- wall-hang keyholes: two, so it hangs level with the
+    //      USB edge (and its cable) pointing down ----
+    for (x = [35, 85]) {
+      translate([x, 32, -0.1]) cylinder(d = 7, h = Tf + 1);
+      hull() {
+        translate([x, 40, -0.1]) cylinder(d = 3.4, h = 1.6);
+        translate([x, 24, -0.1]) cylinder(d = 3.4, h = 1.6);
+      }
+    }
+
     // ---- QR label recess, underside ----
     translate([W/2 - label_w/2, D/2 - label_h/2, -0.01])
       cube([label_w, label_h, label_t]);

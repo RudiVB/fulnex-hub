@@ -21,7 +21,9 @@
 // ============================================================
 
 part = "both";        // "shell" | "base" | "both"
-variant = "TEMP";     // what this puck is: TEMP | DOOR | MOTION | LEAK …
+// what this puck does, in small letters under the dot
+variant1 = "TEMP · HUMIDITY";
+variant2 = "";
 
 /* ---------- master dimensions ---------- */
 PR = 23;              // puck radius (Ø46)
@@ -65,10 +67,15 @@ module shell() {
       linear_extrude(0.7)
         text("FULNEX", size = 3.8, font = "Arial:style=Bold",
              halign = "center", valign = "center", spacing = 1.35);
-    translate([0, -8, PH - 0.6])
+    translate([0, variant2 == "" ? -8 : -6.5, PH - 0.6])
       linear_extrude(0.7)
-        text(variant, size = 3, font = "Arial:style=Bold",
-             halign = "center", valign = "center", spacing = 1.5);
+        text(variant1, size = 2.2, font = "Arial:style=Bold",
+             halign = "center", valign = "center", spacing = 1.4);
+    if (variant2 != "")
+      translate([0, -11, PH - 0.6])
+        linear_extrude(0.7)
+          text(variant2, size = 2.2, font = "Arial:style=Bold",
+               halign = "center", valign = "center", spacing = 1.4);
     // micro vent ring hidden under the rim (sensor breathes)
     for (a = [0 : 45 : 359])
       rotate([0, 0, a])

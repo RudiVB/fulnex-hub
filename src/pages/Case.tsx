@@ -26,6 +26,7 @@ const HOLES: { where: string; hole: string; why: string }[] = [
   { where: "Lid, top face", hole: "1 tiny hole below the FULNEX deboss", why: "The light pipe — a clear filament stub carries the status LED to the surface. The breathing dot from the renders." },
   { where: "Base, underside", hole: "4 countersunk screw holes", why: "The only screws in the product, hidden underneath — they reach up into the lid's posts. Top and sides stay seamless." },
   { where: "Base, underside", hole: "34 mm square recess", why: "The QR label: serial, claim code, and the QR the customer scans to claim." },
+  { where: "Base, underside", hole: "2 keyhole slots", why: "Hang the hub on a wall with two screws. Slots run both directions, so you choose: logo upright, or cable exiting downward." },
   { where: "Base, floor", hole: "8 vent slots", why: "Airflow under the electronics, positioned beneath the board." },
   { where: "Inside", hole: "4 standoffs · 1 spare tray · 1 zip-tie bridge", why: "The ESP deck screws onto the standoffs, docking the board's USB at the rear window. The tray is spare space for a future module; the jack harness runs under the deck, tied to the bridge." },
 ];
@@ -117,10 +118,12 @@ export default function CasePage() {
           Ø46 mm, stick anywhere. Inside: an ESP32-C3 broadcasting over Bluetooth as a
           deep-sleep beacon — wake, read, shout once, sleep — about a year on a CR2450
           coin cell. The face carries FULNEX, the light dot, and what it is: the{" "}
-          <span className="font-mono text-ink">variant</span> word (TEMP, DOOR, MOTION,
-          LEAK) is one parameter in the print file, so every puck type comes off the
-          printer already labelled. Same shell for every variant — only the little board
-          on the base changes. View both parts in the viewer above (Puck shell / Puck base).
+          face says what it does — <span className="font-mono text-ink">TEMP · HUMIDITY</span> —
+          debossed straight into the plastic. Each sense that needs a different body gets
+          one: the <span className="text-ink">door pair</span> (a slim bar on the frame + a
+          battery-free magnet block on the door, alignment lines meeting across the gap)
+          is designed and in the viewer above; motion (PIR lens window) and leak (floor
+          probes) get their own shapes next.
         </p>
         <ul className="text-mute text-sm space-y-1.5">
           <li className="flex gap-2"><span className="text-brass">·</span> Base screws up into the shell (2× M2) — cell pocket, board pillars, vent slots, and a keyhole so it hangs on one screw or sticks with a tape pad.</li>
