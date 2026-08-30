@@ -20,23 +20,23 @@ const ARCHITECTURE = [
 ];
 
 const HOLES: { where: string; hole: string; why: string }[] = [
-  { where: "Rear", hole: "USB-C cutout", why: "Power in — 5 V, nothing else. The power module sits in a tray right behind it." },
-  { where: "Rear", hole: "2 jack holes — P1 (GPIO32) · P2 (GPIO33)", why: "The wired escape hatch: P1 = 8-probe temperature bus, P2 = any sense. Tip = signal, ring = 3V3, sleeve = GND. Invisible from the front — plug in once, forget." },
+  { where: "Rear", hole: "USB window", why: "The cable plugs STRAIGHT into the ESP's own USB connector — the deck docks the board right behind this window. Power in, and factory provisioning through the same hole, lid never opened. No power module, no extra parts." },
+  { where: "Left side, near the back", hole: "2 jack holes — P1 (GPIO32) · P2 (GPIO33)", why: "The wired escape hatch: P1 = 8-probe temperature bus, P2 = any sense. Tip = signal, ring = 3V3, sleeve = GND. Invisible from the front — plug in once, forget." },
   { where: "Lid, top face", hole: "1 tiny hole below the FULNEX deboss", why: "The light pipe — a clear filament stub carries the status LED to the surface. The breathing dot from the renders." },
   { where: "Base, underside", hole: "4 countersunk screw holes", why: "The only screws in the product, hidden underneath — they reach up into the lid's posts. Top and sides stay seamless." },
   { where: "Base, underside", hole: "34 mm square recess", why: "The QR label: serial, claim code, and the QR the customer scans to claim." },
   { where: "Base, floor", hole: "8 vent slots", why: "Airflow under the electronics, positioned beneath the board." },
-  { where: "Inside", hole: "4 standoffs · 2 open trays · 1 zip-tie bridge", why: "The ESP deck screws onto the standoffs; the buck and USB-C power modules drop into the trays (the lid holds them seated); the short rear-jack harness ties to the bridge." },
+  { where: "Inside", hole: "4 standoffs · 1 spare tray · 1 zip-tie bridge", why: "The ESP deck screws onto the standoffs, docking the board's USB at the rear window. The tray is spare space for a future module; the jack harness runs under the deck, tied to the bridge." },
 ];
 
 const STEPS: string[] = [
   "Print all three parts in matte black PETG — the lid face-down for a crisp FULNEX deboss. Press a clear filament stub into the light-pipe hole.",
-  "Press the two jacks into the rear holes (P1 temp bus, P2 universal), nuts on the inside.",
-  "Snap the ESP32 DevKit into the deck — corners under the four lips, pin headers hanging through the opening.",
-  "Screw the deck onto the four standoffs (M2.5).",
-  "Drop the buck converter and USB-C power module into their trays — no screws, the lid keeps them seated.",
-  "Wire the two jacks (tip = signal, ring = 3V3, sleeve = GND) and tie the short harness to the bridge.",
+  "Press the two jacks into the left-side holes (P1 temp bus, P2 universal), nuts on the inside.",
+  "Snap the ESP32 DevKit into the deck — front corners under the cradles, USB end held by the side clips, pin headers hanging through.",
+  "Screw the deck onto the four standoffs (M2.5) — the board's USB connector now sits at the rear window. That's the whole power system.",
+  "Wire the two jacks (tip = signal, ring = 3V3, sleeve = GND) and tie the harness to the bridge under the deck.",
   "Lid on. Four countersunk screws from underneath. QR label into the base recess.",
+  "Provision through the rear window: plug in USB, paste the FULNEX-PROVISION line, done — the lid never comes back off.",
   "QC before boxing: hold BOOT while powering on — jig mode prints every input. No pin unproven.",
 ];
 

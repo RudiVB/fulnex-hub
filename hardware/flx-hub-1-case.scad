@@ -38,17 +38,22 @@ Tlid = 3.0;           // lid plate (crown rises above)
    a cable (geyser probe, kas probe). Relays and IO breakouts
    live in appliance products and the future FLX-IO, not here. */
 jack_d = 6.4;
-rear_jack_xs = [62, 76];            // P1, P2 beside the USB
-rear_jack_z = 11;
+side_jack_ys = [62, 74];            // P1, P2 on the LEFT wall, near the rear
+side_jack_z = 11;
 
-/* ---------- rear: USB-C power ---------- */
-usb_w = 10; usb_h = 4.4; usb_cx = 44; usb_z = 8;
+/* ---------- rear: USB window straight to the ESP -------------
+   The deck docks the DevKit's own USB connector at this window:
+   the wall cable powers the board directly (onboard regulator),
+   and provisioning happens through the hole — lid stays on.    */
+usb_w = 13; usb_h = 8; usb_cx = 60; usb_z = 12;
 
-/* ---------- interior fit-out (sealed hub = simple) ---------- */
-pcb_w = 70;  pcb_d = 50;  pcb_x = 18; pcb_y = 34;
+/* ---------- interior fit-out (sealed hub = simple) ----------
+   The deck sits PORTRAIT against the rear wall so the DevKit's
+   USB connector reaches the rear window. One optional tray up
+   front for any future module; one bridge for the jack wires. */
+pcb_w = 50;  pcb_d = 70;  pcb_x = 35; pcb_y = 47;
 standoff_h = 5;  standoff_d = 7;  screw_d = 2.6;
-buck_x = 30;  buck_y = 86;  buck_w = 26; buck_d = 18;
-psu_x  = 46;  psu_y  = 98;  psu_w  = 27; psu_d  = 16;
+buck_x = 14;  buck_y = 8;  buck_w = 26; buck_d = 18;
 
 /* ---------- lid details ---------- */
 pipe_d = 2.0;                       // LED dot, on the TOP face
@@ -112,17 +117,16 @@ module base() {
             cylinder(d = standoff_d, h = standoff_h);
             cylinder(d = screw_d,    h = standoff_h + 1);
           }
-      // drop-in trays
+      // one optional module tray, front-left
       tray(buck_x, buck_y, buck_w, buck_d);
-      tray(psu_x,  psu_y,  psu_w,  psu_d);
-      // one harness bridge for the rear jack wires
-      tiebar(62, 90);
+      // harness bridge — jack wires run along the left, under the deck
+      tiebar(16, 60);
     }
 
-    // ---- rear: two discreet sense jacks (P1 temp bus, P2) ----
-    for (x = rear_jack_xs)
-      translate([x, D - T - 1, rear_jack_z])
-        rotate([-90, 0, 0]) cylinder(d = jack_d, h = T + 4);
+    // ---- left wall: two discreet sense jacks (P1 temp bus, P2) ----
+    for (y = side_jack_ys)
+      translate([-1, y, side_jack_z])
+        rotate([0, 90, 0]) cylinder(d = jack_d, h = T + 4);
 
     // ---- rear chord: USB-C power ----
     translate([usb_cx - usb_w/2, D - T - 1, usb_z - usb_h/2])
@@ -212,21 +216,32 @@ module deck_cradle() {
 }
 
 module deck() {
-  bay_x = (pcb_w - dk_l) / 2;
-  bay_y = (pcb_d - dk_w) / 2;
+  // portrait: the DevKit lies along the plate's LONG axis, its USB
+  // end 2 mm from the rear edge, so the connector meets the case
+  // window. Antenna end faces the room (best radio, least metal).
+  bay_x = (pcb_w - dk_w) / 2;
+  bay_y = pcb_d - 2 - dk_l;
   difference() {
     cube([pcb_w, pcb_d, 2]);
-    translate([bay_x + 7, bay_y - 1, -1]) cube([dk_l - 14, dk_w + 2, 4]);
-    translate([bay_x - 1, bay_y + 7, -1]) cube([dk_l + 2, dk_w - 14, 4]);
+    translate([bay_x - 1, bay_y + 7, -1]) cube([dk_w + 2, dk_l - 14, 4]);
+    translate([bay_x + 7, bay_y - 1, -1]) cube([dk_w - 14, dk_l + 2, 4]);
     for (x = [5, pcb_w - 5], y = [5, pcb_d - 5])
       translate([x, y, -1]) cylinder(d = 3, h = 4);
-    translate([6, pcb_d/2 - 6, -1]) cube([4, 12, 4]);
-    translate([pcb_w - 10, pcb_d/2 - 6, -1]) cube([4, 12, 4]);
+    // harness pass-through slots, front half
+    translate([pcb_w/2 - 6, 8, -1]) cube([12, 4, 4]);
+    translate([pcb_w/2 - 6, 22, -1]) cube([12, 4, 4]);
   }
+  // front corners: full L-cradles
   translate([bay_x, bay_y, 0]) deck_cradle();
-  translate([bay_x + dk_l, bay_y, 0]) rotate([0, 0, 90]) deck_cradle();
-  translate([bay_x + dk_l, bay_y + dk_w, 0]) rotate([0, 0, 180]) deck_cradle();
-  translate([bay_x, bay_y + dk_w, 0]) rotate([0, 0, 270]) deck_cradle();
+  translate([bay_x + dk_w, bay_y, 0]) rotate([0, 0, 90]) deck_cradle();
+  // USB end: side-only clips — nothing crosses the connector's path
+  translate([bay_x, bay_y + dk_l - 8, 0]) deck_side_clip();
+  translate([bay_x + dk_w, bay_y + dk_l - 8, 0]) mirror([1, 0, 0]) deck_side_clip();
+}
+
+module deck_side_clip() {   // wall + lip along one side, board at +x
+  translate([-2, 0, 2]) cube([2, 8, 3]);
+  translate([-0.1, 1.5, 3.9]) cube([1, 5, 1]);
 }
 
 /* ============ layout ============ */
