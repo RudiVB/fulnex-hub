@@ -10,6 +10,7 @@ const PARTS = [
   { key: "puck", label: "Puck shell", file: "/hardware/flx-puck-1-shell.stl" },
   { key: "puckbase", label: "Puck base", file: "/hardware/flx-puck-1-base.stl" },
   { key: "doorbar", label: "Door bar", file: "/hardware/flx-door-1-bar.stl" },
+  { key: "doorback", label: "Door back", file: "/hardware/flx-door-1-back.stl" },
   { key: "doormag", label: "Door magnet", file: "/hardware/flx-door-1-magnet.stl" },
   { key: "motion", label: "Motion", file: "/hardware/flx-motion-1-shell.stl" },
   { key: "leak", label: "Leak", file: "/hardware/flx-leak-1-shell.stl" },
@@ -133,7 +134,7 @@ export function CaseViewer() {
 
   return (
     <div>
-      <div className="flex items-center gap-1.5 mb-3">
+      <div className="flex flex-wrap items-center gap-1.5 mb-3">
         {PARTS.map((p) => (
           <button
             key={p.key}
