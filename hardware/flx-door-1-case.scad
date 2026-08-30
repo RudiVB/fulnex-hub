@@ -1,3 +1,4 @@
+use <fulnex-logo.scad>;
 // ============================================================
 //  FLX-DOOR-1 — the door pair (Rev A)
 //  FULNEX · matte black PETG · two pieces, like the renders:
@@ -53,10 +54,9 @@ module bar() {
     translate([0, 0, -BTOP])
       linear_extrude(BH - BTOP) offset(-BWALL) pill(BL, BW, BR);
     // face is at z = BH (printed face-down): deboss identity
-    translate([BL/2, BW/2 + 5.5, BH - 0.6])
+    translate([BL/2, BW/2 + 5.8, BH - 0.6])
       linear_extrude(0.7)
-        text("FULNEX", size = 3.2, font = "Michroma",
-             halign = "center", valign = "center", spacing = 1.6);
+        fulnex_logo(4.6);
     translate([BL/2, BW/2 - 6, BH - 0.6])
       linear_extrude(0.7)
         text("DOOR", size = 2.6, font = "Michroma",

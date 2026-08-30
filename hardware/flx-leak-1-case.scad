@@ -1,3 +1,4 @@
+use <fulnex-logo.scad>;
 // ============================================================
 //  FLX-LEAK-1 — the floor water sensor (Rev A)
 //  FULNEX · matte black PETG · a low soft disc that stands on
@@ -48,10 +49,9 @@ module shell() {
     // LED dot, centre
     translate([0, 0, -1]) cylinder(d = pipe_d, h = LH + 2);
     // identity
-    translate([0, 6.5, LH - 0.6])
+    translate([0, 7, LH - 0.6])
       linear_extrude(0.7)
-        text("FULNEX", size = 3.2, font = "Michroma",
-             halign = "center", valign = "center", spacing = 1.6);
+        fulnex_logo(4.5);
     translate([0, -7, LH - 0.6])
       linear_extrude(0.7)
         text("LEAK", size = 2.8, font = "Michroma",

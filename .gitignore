@@ -7,3 +7,4 @@ dist/
 firmware/build/
 firmware/fulnex_hub/build/
 firmware/build*/
+firmware/*/build/

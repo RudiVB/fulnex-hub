@@ -1,3 +1,4 @@
+use <fulnex-logo.scad>;
 // ============================================================
 //  FLX-PUCK-1 — the Bluetooth sense puck (Rev A)
 //  FULNEX · matte black PETG · the flattened dome from the
@@ -73,10 +74,9 @@ module shell() {
     }
     // identity, debossed into the face: FULNEX above the dot,
     // what-it-is below (prints crisp — face-down on the plate)
-    translate([0, lens_d > 0 ? 10.5 : 7.5, PH - 0.6])
+    translate([0, lens_d > 0 ? 10.5 : 8, PH - 0.6])
       linear_extrude(0.7)
-        text("FULNEX", size = lens_d > 0 ? 3.2 : 3.8, font = "Michroma",
-             halign = "center", valign = "center", spacing = 1.6);
+        fulnex_logo(lens_d > 0 ? 4.2 : 5);
     translate([0, lens_d > 0 ? -10.5 : (variant2 == "" ? -8 : -6.5), PH - 0.6])
       linear_extrude(0.7)
         text(variant1, size = 2.2, font = "Michroma",

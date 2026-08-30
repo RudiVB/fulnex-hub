@@ -1,3 +1,4 @@
+use <fulnex-logo.scad>;
 // ============================================================
 //  FLX-IO-1 — the 12-port pro module (Rev A)
 //  FULNEX · matte black PETG · where the wires live.
@@ -151,10 +152,9 @@ module lid() {
             offset(-T - 2.05) squircle(W, D, R);
           }
     }
-    translate([W/2, D/2 + 9, Tlid - 0.6])
+    translate([W/2, D/2 + 10, Tlid - 0.6])
       linear_extrude(0.7)
-        text("FULNEX", size = 4.4, font = "Michroma",
-             halign = "center", valign = "center", spacing = 1.6);
+        fulnex_logo(7.5);
     translate([W/2, D/2 - 10, Tlid - 0.6])
       linear_extrude(0.7)
         text("FLX-IO", size = 3.4, font = "Michroma",

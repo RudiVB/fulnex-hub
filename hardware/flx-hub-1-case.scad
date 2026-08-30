@@ -1,3 +1,4 @@
+use <fulnex-logo.scad>;
 // ============================================================
 //  FLX-HUB-1 — Rev B enclosure (the squircle)
 //  FULNEX · matte black PETG · matches the product renders:
@@ -206,13 +207,17 @@ module lid() {
         translate([0, 0, 1.4]) linear_extrude(0.01) squircle(W, D, R);
       }
       translate([0, 0, 1.4]) linear_extrude(Tlid - 1.4) squircle(W, D, R);
-      // the crown: a soft shoulder rising to a smaller squircle
-      hull() {
-        translate([0, 0, Tlid - 0.01]) linear_extrude(0.01)
-          offset(-1.5) squircle(W, D, R);
-        translate([0, 0, Tlid + crown_rise - 0.01]) linear_extrude(0.01)
-          offset(-crown_inset) squircle(W, D, R);
-      }
+      // the crown: seamless — a chain of hulls tracing one smooth
+      // convex curve from rim to plateau, no shoulder, no step
+      crown = [[0, 0], [-1.2, 0.9], [-3.2, 1.8], [-6.5, 2.6],
+               [-11, 3.15], [-16.5, 3.45], [-23, 3.55]];
+      for (i = [0 : len(crown) - 2])
+        hull() {
+          translate([0, 0, Tlid + crown[i][1] - 0.01])
+            linear_extrude(0.02) offset(crown[i][0]) squircle(W, D, R);
+          translate([0, 0, Tlid + crown[i + 1][1] - 0.01])
+            linear_extrude(0.02) offset(crown[i + 1][0]) squircle(W, D, R);
+        }
       // inner lip that seats inside the walls
       translate([0, 0, -3])
         linear_extrude(3)
@@ -225,11 +230,10 @@ module lid() {
         translate([p[0], p[1], -(H - Tf - Tlid + 2.6)])
           cylinder(d = 8, h = H - Tf - Tlid + 2.6);
     }
-    // FULNEX across the face
-    translate([W/2, D/2 + 6, Tlid + crown_rise - logo_depth])
+    // the FULNEX logotype across the face — drawn, slit and all
+    translate([W/2, D/2 + 7, Tlid + 3.55 - logo_depth])
       linear_extrude(logo_depth + 0.1)
-        text(logo, size = 12, font = "Michroma",
-             halign = "center", valign = "center", spacing = 1.3);
+        fulnex_logo(11);
     // the LED dot — on the top face, lower-centre, like the render
     translate([W/2, D/2 - 26, -H]) cylinder(d = pipe_d, h = H + Tlid + crown_rise + 2);
     // screw threads into the posts, from below

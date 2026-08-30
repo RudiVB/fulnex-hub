@@ -1,3 +1,4 @@
+use <fulnex-logo.scad>;
 // ============================================================
 //  FLX-GEYSER-1 — the geyser switch (Rev A)
 //  FULNEX · wall box, electrician-installed, two chambers:
@@ -137,10 +138,9 @@ module lid() {
           }
     }
     // identity
-    translate([W/2, D/2 + 8, Tlid - 0.6])
+    translate([W/2, D/2 + 9, Tlid - 0.6])
       linear_extrude(0.7)
-        text("FULNEX", size = 4.2, font = "Michroma",
-             halign = "center", valign = "center", spacing = 1.6);
+        fulnex_logo(7);
     translate([W/2, D/2 - 9, Tlid - 0.6])
       linear_extrude(0.7)
         text("GEYSER", size = 3.2, font = "Michroma",
