@@ -8,7 +8,7 @@ import {
 } from "recharts";
 import {
   Banknote, Boxes, ClipboardList, Cpu, Download, Factory,
-  Hammer, Printer, QrCode, Receipt, RefreshCcw, Rocket,
+  Hammer, Landmark, Printer, QrCode, Receipt, RefreshCcw, Rocket,
   Settings2, Truck, UsersRound,
 } from "lucide-react";
 import { Device, isOnline, supabase, timeAgo } from "../lib/supabase";
@@ -61,6 +61,7 @@ const TABS = [
   { key: "production", label: "Production", icon: Factory },
   { key: "sales", label: "Sales", icon: Receipt },
   { key: "devlog", label: "Dev log", icon: ClipboardList },
+  { key: "company", label: "Company", icon: Landmark },
   { key: "settings", label: "Settings", icon: Settings2 },
 ] as const;
 type TabKey = (typeof TABS)[number]["key"];
@@ -208,6 +209,7 @@ export default function Admin() {
         </div>
       )}
       {tab === "devlog" && <DevlogCard log={log} me={me} onChange={load} />}
+      {tab === "company" && <ComplianceCard />}
       {tab === "settings" && (
         <div className="space-y-6">
           <ProductsCard products={products} onChange={load} />
@@ -1307,6 +1309,75 @@ function ProductsCard({ products, onChange }: { products: Product[]; onChange: (
             ))}
           </tbody>
         </table>
+      </div>
+    </FadeUp>
+  );
+}
+
+/* ===================== company & compliance ===================== */
+type ComplianceItem = {
+  id: number; phase: string; title: string; detail: string;
+  cost: string; status: "todo" | "busy" | "done"; sort: number;
+};
+
+const NEXT_STATUS = { todo: "busy", busy: "done", done: "todo" } as const;
+
+function ComplianceCard() {
+  const [items, setItems] = useState<ComplianceItem[]>([]);
+
+  const load = useCallback(async () => {
+    const { data } = await supabase.from("compliance_items").select("*").order("sort");
+    setItems((data as ComplianceItem[]) ?? []);
+  }, []);
+  useEffect(() => { load(); }, [load]);
+
+  const cycle = async (item: ComplianceItem) => {
+    const status = NEXT_STATUS[item.status];
+    setItems((xs) => xs.map((x) => (x.id === item.id ? { ...x, status } : x)));
+    await supabase.from("compliance_items").update({ status, updated_at: new Date().toISOString() }).eq("id", item.id);
+  };
+
+  const phases = [...new Set(items.map((i) => i.phase))];
+  const done = items.filter((i) => i.status === "done").length;
+
+  return (
+    <FadeUp className="card p-5 sm:p-6">
+      <div className="flex items-baseline justify-between mb-1">
+        <h2 className="font-semibold">Registering FULNEX, in full</h2>
+        <span className="text-faint text-xs font-mono">{done}/{items.length} done</span>
+      </div>
+      <p className="text-mute text-sm mb-5">
+        The whole path from two brothers to a legal, ICASA-approved company — in order.
+        Tap a status to move it along: todo → busy → done. Radio approval is TWO families,
+        not five products: everything on the WROOM-32 module is family A, every C3 sense is family B.
+      </p>
+      <div className="space-y-6">
+        {phases.map((phase) => (
+          <div key={phase}>
+            <div className="text-[11px] font-mono uppercase tracking-widest text-mute mb-2">{phase}</div>
+            <div className="space-y-2">
+              {items.filter((i) => i.phase === phase).map((i) => (
+                <div key={i.id} className="flex items-start gap-3 rounded-xl border border-line bg-ground/60 px-3.5 py-3">
+                  <button
+                    onClick={() => cycle(i)}
+                    className={`shrink-0 mt-0.5 text-[10px] font-mono uppercase tracking-widest rounded-full px-2.5 py-1 border transition-colors ${
+                      i.status === "done" ? "border-ok text-ok" :
+                      i.status === "busy" ? "border-brass text-brass" :
+                      "border-line text-faint hover:text-mute"
+                    }`}
+                  >
+                    {i.status}
+                  </button>
+                  <div className="min-w-0 flex-1">
+                    <div className={`text-sm ${i.status === "done" ? "text-faint line-through" : "text-ink"}`}>{i.title}</div>
+                    <div className="text-mute text-xs mt-0.5">{i.detail}</div>
+                  </div>
+                  <div className="shrink-0 text-xs font-mono text-brass">{i.cost}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
       </div>
     </FadeUp>
   );
