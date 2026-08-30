@@ -15,6 +15,7 @@ const SECTIONS = [
   { key: "people", h: "The people", sub: "" },
   { key: "years", h: "The years — as long as they take", sub: "Earn-gated, soak-proven, never date-rushed." },
   { key: "customers", h: "Where the customers come from", sub: "A target without a source is a wish. The weekly metric: 2–3 new conversations." },
+  { key: "channel", h: "The installer channel — order to money", sub: "The boss sells, Olof builds, the QR activates, the rails bill monthly." },
   { key: "retail", h: "The road to shop shelves", sub: "In order. No skipping." },
   { key: "funding", h: "The money — R1,500/month, then customers", sub: "Above the gate: the monthly budget. Below it: only money FULNEX has already earned." },
   { key: "notes", h: "The rules", sub: "" },
