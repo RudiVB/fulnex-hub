@@ -45,7 +45,9 @@ side_jack_z = 11;
    The deck docks the DevKit's own USB connector at this window:
    the wall cable powers the board directly (onboard regulator),
    and provisioning happens through the hole — lid stays on.    */
-usb_w = 13; usb_h = 8; usb_cx = 60; usb_z = 12;
+// snug to the slim cable we ship in the box; the wall's inner half
+// flares wider so the plug funnels onto the connector by itself
+usb_w = 10; usb_h = 6; usb_cx = 60; usb_z = 12;
 
 /* ---------- interior fit-out (sealed hub = simple) ----------
    The deck sits PORTRAIT against the rear wall so the DevKit's
@@ -128,9 +130,15 @@ module base() {
       translate([-1, y, side_jack_z])
         rotate([0, 90, 0]) cylinder(d = jack_d, h = T + 4);
 
-    // ---- rear chord: USB-C power ----
+    // ---- rear chord: USB window (snug outside, funnel inside) ----
     translate([usb_cx - usb_w/2, D - T - 1, usb_z - usb_h/2])
       cube([usb_w, T + 4, usb_h]);
+    hull() {
+      translate([usb_cx - usb_w/2, D - T/2, usb_z - usb_h/2])
+        cube([usb_w, 0.01, usb_h]);
+      translate([usb_cx - usb_w/2 - 2.5, D - T - 0.5, usb_z - usb_h/2 - 1.5])
+        cube([usb_w + 5, 0.01, usb_h + 3]);
+    }
 
     // ---- lid screws come up from BELOW: countersunk floor holes ----
     for (p = lidpost_xy) {
