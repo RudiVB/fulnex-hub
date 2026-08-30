@@ -1374,6 +1374,20 @@ const PLAN_PEOPLE = [
   { who: "Aidan (proposed)", does: "TOOLMAKER — the missing third skill. Now: assembly jigs and fixtures so every unit builds identical, QC discipline, drill templates for installs. Later: he is the injection-mould answer — moulds are literally toolmaker work, and an in-house mould could cost a fraction of the R80k quote. Bring him in on WRITTEN sweat-equity that vests: e.g. up to 10–15% earned over 2–3 years against delivered work, brothers keep control, no equity for promises — only for output. Start him on one real job (the assembly jig for the puck) and let the relationship prove itself before the paperwork grows." },
 ] as const;
 
+// "Target 3 CMMS + 2 sites" means nothing without answering WHERE
+// customers come from. The honest pipeline: ~10 real conversations
+// per closed deal, so the weekly metric is conversations, not sales.
+const PLAN_CUSTOMERS = [
+  "The warm circle first — every first customer knows you already: Rudi's work network (suppliers and contacts around Nutritech, never competing with the employer), Olof's town (Somerset East runs on WhatsApp groups and the co-op noticeboard), family, church, the guys who already ask Rudi to 'quickly fix' their computers.",
+  "Walk the main street: Karoo guesthouses, butcheries and agri services with no website or a dead one. Olof knows the owners by name. A guesthouse that takes bookings is the highest-value website client in town — and later, the perfect beta home for senses.",
+  "Facebook is SA small-town infrastructure: community groups + Marketplace, posting finished work (the site, the kas, the printed hub) — not adverts, just show-and-tell with a number to WhatsApp. Free, and it compounds.",
+  "The biltong community: SA biltong hobby groups are huge and passionate. The kas story (with the autopilot graphs) posted there builds the exact audience that pre-orders hardware — and asks who built the site, which sells websites.",
+  "Build-in-public: two brothers in the Karoo building an IoT company is genuinely postable content (TikTok/FB reels of prints, the kas, the light in the X). It costs evenings, not rands, and it is where founder pre-orders come from.",
+  "Every delivered site carries 'Site deur Fulnex' in the footer with a link, and every happy care-plan client gets asked — plainly — for one referral. The compounding channel.",
+  "CMMS specifically: one from Rudi's industry contacts, one from Olof's town workshops, one from posting the beta story on LinkedIn. Fewer, bigger, slower — start all three conversations in month one, close in month three.",
+  "The pipeline math, honestly: ~10 conversations → ~3 quotes → 1 yes. The weekly target that matters is 2–3 new conversations, tracked in the dev log — hit that, and the month-3-to-6 revenue targets follow; skip it, and no plan survives.",
+] as const;
+
 const PLAN_RETAIL = [
   "Soak first, always: every design runs 3 months in our own homes, then 6–12 months across 10+ beta homes, before anyone retail-buys it. Battery-life claims get proven by calendar, not calculator.",
   "Shelf 1 — our own site (year 1–2): direct sales, full margin, we learn support and returns on friendly customers.",
@@ -1502,6 +1516,15 @@ function BusinessPlanCard() {
             <div className="text-xs font-mono text-brass mt-2.5">{y.income}</div>
           </div>
         ))}
+      </div>
+
+      <div className="text-[11px] font-mono uppercase tracking-widest text-mute mb-2">Where the customers actually come from</div>
+      <div className="rounded-xl border border-line bg-ground/60 p-4 mb-6">
+        <ul className="space-y-1.5">
+          {PLAN_CUSTOMERS.map((r) => (
+            <li key={r} className="flex gap-2 text-xs text-mute"><span className="text-brass shrink-0">·</span>{r}</li>
+          ))}
+        </ul>
       </div>
 
       <div className="text-[11px] font-mono uppercase tracking-widest text-mute mb-2">The road to shop shelves — in order, no skipping</div>
