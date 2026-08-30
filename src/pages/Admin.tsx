@@ -1323,8 +1323,13 @@ function ProductsCard({ products, onChange }: { products: Product[]; onChange: (
 const PLAN_LINES = [
   {
     name: "FULNEX Home", state: "pre-order phase",
-    what: "The hub + senses + biltong kas + geyser. Hardware once, senses forever — every hub sold seeds years of R349 add-on sales.",
-    money: "Hub R899 · senses R349 · Full Home R3,999 · kas as premium furniture",
+    what: "The hub + senses + geyser box. Hardware once, senses forever — every hub sold seeds years of R349 add-on sales.",
+    money: "Hub R899 · senses R349 · Full Home R3,999 · geyser via installer partners",
+  },
+  {
+    name: "Appliances — Biltong Kas & Grow", state: "kas autopilot LIVE",
+    what: "Climate-controlled cabinets: the kas makes biltong, the Grow raises herbs and seedlings. Same brain, same autopilot already running on FLX-0004 — the Grow is a preset, a light relay and a different sticker. Olof's woodwork is the moat: nobody imports furniture-grade cabinets from Shenzhen.",
+    money: "Kas R6,500–9,000 · Grow R4,500–7,000 · fattest rand-per-sale in the family",
   },
   {
     name: "FULNEX Pro (subscription)", state: "tiers live",
@@ -1340,6 +1345,11 @@ const PLAN_LINES = [
     name: "WMS + custom work", state: "in development",
     what: "The warehouse backbone, NetPulse, plugins, and paid custom IoT installs (farms, lodges, factories wanting FULNEX senses + dashboards).",
     money: "Project fees now, product revenue later — custom installs also field-test hardware",
+  },
+  {
+    name: "Consumables & repeat trade", state: "follows the fleet",
+    what: "Biltong spice boxes and hooks for kas owners, seedling trays and grow media for Grow owners, replacement probes, branded PSUs, extra QR labels for installers. Small money that arrives monthly and keeps customers in the FULNEX shop.",
+    money: "Low rand, high frequency — the till between hardware sales",
   },
 ] as const;
 
@@ -1359,7 +1369,7 @@ const PLAN_YEARS = [
     rows: [
       "PCB-assembled senses (R80–120 landed) — Olof assembles hundreds, not tens. Second printer or small print farm.",
       "Geyser launches through electrician partners (they install, we supply — their CoC, our hardware).",
-      "Kas batches as premium product — the story product that markets everything else.",
+      "Kas batches as premium product — the story product that markets everything else. Grow cabinet launches off the same autopilot: preset + light-schedule relay + seedling market.",
       "CMMS grows on referrals: 20 companies. Pro subscription attach rate target 30% of homes.",
     ],
     income: "R1.5m–R2.5m revenue · ~60% blended margin — first salaries drawn",
