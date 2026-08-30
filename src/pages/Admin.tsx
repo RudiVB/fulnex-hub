@@ -659,7 +659,7 @@ const FIRMWARES = [
     runs: "Every Bluetooth sense — puck, door, motion, leak (ESP32-C3)",
     images: ["flx_sense 1.0.0 — one sketch; the variant is provisioned, not compiled"],
     features: [
-      "Deep-sleep beacon: wake → read → one 1.5 s broadcast → sleep (~a year on a coin cell)",
+      "Deep-sleep beacon: wake → read → one 1.5 s broadcast → sleep (months per CR2032)",
       "TEMP: AHT10/20 every 60 s, plus ATC-compatible frames so fw 2.0 hubs already hear it",
       "DOOR / MOTION / LEAK: instant wake on the event + a 10-minute heartbeat",
       "FULNEX frame: type, value, battery, sequence — the hub dedupes and slots by radio address",

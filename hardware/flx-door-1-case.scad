@@ -111,11 +111,12 @@ module back() {
     for (x = [4, BL - 16])
       translate([x, BW/2 - 7.2, -0.01]) cube([12, 14.4 - BWALL * 2, 0.5]);
   }
-  // CR2032 pocket ring (bare cell, contacts are wired)
+  // ring seats the round BDD CR2025/CR2032 PCB holder (~Ø23) —
+  // same holder as the pucks, one battery standard everywhere
   translate([BL - 22, BW/2, 0])
     difference() {
-      cylinder(d = 21.6 + 2.4, h = BACK_T + 2);
-      translate([0, 0, BACK_T]) cylinder(d = 20.6, h = 4);
+      cylinder(d = 23.6 + 2.4, h = BACK_T + 2);
+      translate([0, 0, BACK_T]) cylinder(d = 23.6, h = 4);
       translate([0, 0, -0.1]) cylinder(d = 14, h = BACK_T + 3);
     }
   // C3 board end-stops (board 22.5 x 18 lies flat at the other end)

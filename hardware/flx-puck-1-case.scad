@@ -5,7 +5,8 @@ use <fulnex-logo.scad>;
 //  renders: Ø46 soft disc, LED dot centre-top, nothing else.
 //
 //  Inside: ESP32-C3 SuperMini (BLE 5 beacon, deep-sleep),
-//  CR2450 coin cell in a holder, one sensor module (temp/hum,
+//  CR2032 coin cell in the round PCB holder Communica stocks
+//  (BDD CR2025/CR2032, ~Ø23), one sensor module (temp/hum,
 //  reed, PIR — same shell for every puck variant).
 //
 //  Two parts:
@@ -42,7 +43,7 @@ pipe_d = 1.6;         // LED dot, dead centre
 /* ---------- base plate ---------- */
 BASE_T = 1.8;
 BASE_R = PR - WALL - 0.25;    // slips inside the shell
-cell_d = 29.4;                // CR2450 holder pocket
+cell_d = 23.6;                // CR2032 BDD holder pocket (~Ø23 + play)
 cell_wall = 1.2;
 boss_r = PR - WALL - 3.2;     // shell screw bosses, on Y axis
 
@@ -135,7 +136,7 @@ module base() {
     for (i = [-1, 0, 1])
       translate([11, i * 5 - 1, -0.1]) cube([8, 2, BASE_T + 1]);
   }
-  // CR2450 holder pocket, centre — a low retaining ring
+  // CR2032 holder pocket, centre — a low retaining ring
   difference() {
     cylinder(d = cell_d + 2 * cell_wall, h = BASE_T + 2.2);
     translate([0, 0, BASE_T]) cylinder(d = cell_d, h = 4);

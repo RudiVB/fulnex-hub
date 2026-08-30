@@ -7,7 +7,7 @@ import { FadeUp } from "../components/motion";
 const ARCHITECTURE = [
   {
     t: "Bluetooth senses — the pucks",
-    d: "Temp/humidity, door, motion: small battery pucks you stick anywhere. They broadcast; the hub listens. No pairing, no limit — one hub hears every puck in the house. Battery lasts about a year.",
+    d: "Temp/humidity, door, motion: small battery pucks you stick anywhere. They broadcast; the hub listens. No pairing, no limit — one hub hears every puck in the house. Months per battery, and it's the CR2032 every till in the country sells.",
   },
   {
     t: "Wired senses — the two rear jacks",
@@ -116,8 +116,8 @@ export default function CasePage() {
         <h2 className="text-xl font-semibold tracking-tight mb-1">The sense puck</h2>
         <p className="text-mute text-sm mb-4">
           Ø46 mm, stick anywhere. Inside: an ESP32-C3 broadcasting over Bluetooth as a
-          deep-sleep beacon — wake, read, shout once, sleep — about a year on a CR2450
-          coin cell. The face carries FULNEX, the light dot, and what it is: the{" "}
+          deep-sleep beacon — wake, read, shout once, sleep — months on the CR2032
+          coin cell sold at every till. The face carries FULNEX, the light dot, and what it is: the{" "}
           face says what it does — <span className="font-mono text-ink">TEMP · HUMIDITY</span> —
           debossed straight into the plastic. The whole sense family is designed, each in
           the body its job demands: the <span className="text-ink">door pair</span> (slim
@@ -129,7 +129,7 @@ export default function CasePage() {
           it shouts). All in the viewer above.
         </p>
         <ul className="text-mute text-sm space-y-1.5">
-          <li className="flex gap-2"><span className="text-brass">·</span> <span className="text-ink">Twist-lock base — no tools, ever:</span> three lugs enter the rim notches, a small twist locks it. Battery flat in a year? Twist open, swap the coin cell, twist shut. Same on motion and leak; the door bar's back clicks in on spring tabs.</li>
+          <li className="flex gap-2"><span className="text-brass">·</span> <span className="text-ink">Twist-lock base — no tools, ever:</span> three lugs enter the rim notches, a small twist locks it. Battery flat? Twist open, swap the CR2032, twist shut. Same on motion and leak; the door bar's back clicks in on spring tabs.</li>
           <li className="flex gap-2"><span className="text-brass">·</span> Cell pocket, board pillars, vent slots, and a keyhole so it hangs on one screw or sticks with a tape pad.</li>
           <li className="flex gap-2"><span className="text-brass">·</span> Shell prints face-down: flawless dome, and the wordmark is debossed in Michroma — the same letterforms as the site and the app.</li>
           <li className="flex gap-2"><span className="text-brass">·</span> The hub already listens for it — puck broadcasts use the beacon format the firmware ingests today.</li>
